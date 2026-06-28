@@ -1,0 +1,60 @@
+import type { SubwayBuilderApi } from '@/shared/game/SubwayBuilderApi'
+
+import { isReactAvailable } from '@/infrastructure/ui/react'
+import { logger } from '@/shared/Logger'
+
+const PANEL_ID = 'autolines'
+const LIFECYCLE_HOOKS = ['onGameInit', 'onCityLoad', 'onMapReady']
+
+// Registers the native floating panel (a button in the mods strip + a draggable,
+// resizable game-styled window). addFloatingPanel keeps the map interactive
+// underneath (unlike addToolbarPanel's full-screen modal backdrop). The game
+// rebuilds the top bar during city load, wiping a mod-load-time registration, so
+// re-register on the lifecycle hooks. Unregister-first keeps it to one button.
+export class FloatingPanelRegistrar {
+  constructor(
+    private readonly api: SubwayBuilderApi,
+    private readonly render: (props: { width?: number, height?: number }) => unknown,
+  ) {}
+
+  installLifecycleHooks(): void {
+    const hooks = this.api.hooks
+    if (!hooks) {
+      return
+    }
+    for (const name of LIFECYCLE_HOOKS) {
+      const hook = hooks[name]
+      if (typeof hook === 'function') {
+        try {
+          hook(() => this.register())
+        } catch {
+          /* a missing hook is fine */
+        }
+      }
+    }
+  }
+
+  register(): void {
+    const ui = this.api.ui
+    if (!ui || typeof ui.addFloatingPanel !== 'function' || !isReactAvailable()) {
+      logger.error('api.ui.addFloatingPanel / React unavailable — mod disabled.')
+      return
+    }
+    try {
+      ui.unregisterComponent?.('top-bar', PANEL_ID)
+    } catch {
+      /* first registration — nothing to unregister */
+    }
+    ui.addFloatingPanel({
+      id: PANEL_ID,
+      icon: 'Waypoints',
+      tooltip: 'Auto Lines',
+      title: 'Auto Lines',
+      defaultWidth: 475,
+      defaultHeight: 650,
+      minWidth: 320,
+      minHeight: 380,
+      render: this.render,
+    })
+  }
+}

@@ -1,0 +1,52 @@
+name: Release
+
+# Runs on every push to main, where it grooms the release PR; merging that PR is
+# what cuts the release. workflow_dispatch stays for re-running it by hand.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # Opens (and keeps updating) a release PR from the conventional commits on
+      # main. Merging that PR is what tags the release and triggers the upload below.
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - uses: actions/checkout@v7
+        if: ${{ steps.release.outputs.release_created }}
+
+      - uses: actions/setup-node@v7
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+        if: ${{ steps.release.outputs.release_created }}
+
+      # The registry rejects a release that ships only the archive: it reads the
+      # standalone manifest to check compatibility without downloading the ZIP.
+      # `npm run package` builds both and refuses to emit them if the manifest
+      # would fail validation.
+      - run: npm run package
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Attach the Railyard assets
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ steps.release.outputs.tag_name }}" \
+            dist/release/auto-lines-*.zip \
+            dist/release/manifest.json
