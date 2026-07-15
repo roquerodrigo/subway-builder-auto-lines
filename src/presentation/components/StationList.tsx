@@ -82,29 +82,36 @@ export function StationList({ route, items, hideNewTag, color: colorOverride, fl
 export function buildDisplay(plan: ExpansionPlan, order: string[], choices: ForkChoices): StationListItem[] {
   const endpointById = new Map(plan.endpoints.map((endpoint) => [endpoint.stationId, endpoint] as const))
 
-  const chainNames = (stationId: string): string[] => {
+  // Carries the station id alongside the name: two different stations can share a
+  // name, and the list has to tell them apart the way the apply path does.
+  const chainStations = (stationId: string): { id: string, name: string }[] => {
     const endpoint = endpointById.get(stationId)
     if (!endpoint) {
       return []
     }
-    const names = endpoint.autoNames.slice()
+    const named = (id: string): { id: string, name: string } => ({
+      id,
+      name: plan.index.stationById.get(id)?.name ?? '?',
+    })
+    const stations = endpoint.autoStationIds.map(named)
     const choice = choices[stationId]
     if (endpoint.fork && choice) {
-      for (const id of choice.stationIds) {
-        names.push(plan.index.stationById.get(id)?.name ?? '?')
-      }
+      stations.push(...choice.stationIds.map(named))
     }
-    return names
+    return stations
   }
 
   const list: StationListItem[] = []
   const seenNew = new Set<string>()
-  const pushNew = (name: string): void => {
-    if (seenNew.has(name)) {
+  // Keyed by station, not by name: keying on the name would collapse two distinct
+  // stations that happen to share one into a single row, under-reporting what the
+  // line actually gains — the apply path adds both.
+  const pushNew = (station: { id: string, name: string }): void => {
+    if (seenNew.has(station.id)) {
       return
     }
-    seenNew.add(name)
-    list.push({ name, isNew: true })
+    seenNew.add(station.id)
+    list.push({ name: station.name, isNew: true })
   }
 
   order.forEach((stationId, i) => {
@@ -112,14 +119,14 @@ export function buildDisplay(plan: ExpansionPlan, order: string[], choices: Fork
       name: plan.index.stationById.get(stationId)?.name ?? '?',
       isNew: false,
     }
-    const names = chainNames(stationId)
+    const stations = chainStations(stationId)
     if (i === 0) {
       // start terminus: its new stops extend outward, before it
-      names.slice().reverse().forEach(pushNew)
+      stations.slice().reverse().forEach(pushNew)
       list.push(existing)
     } else {
       list.push(existing)
-      names.forEach(pushNew)
+      stations.forEach(pushNew)
     }
   })
   return list

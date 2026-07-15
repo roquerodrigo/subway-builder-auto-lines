@@ -137,9 +137,11 @@ describe('buildDisplay', () => {
     expect(newNames(display)).toEqual(['Alpha', 'Delta'])
   })
 
-  it('lists a new stop only once, even when both ends grow into stations of the same name', () => {
+  // Two stations can share a name, and both ends growing into one is exactly when
+  // that shows: the line gains both, so the list has to report both.
+  it('lists both new stops when each end grows into a different station of the same name', () => {
     const display = displayFor(SHARED_NAME_CITY, SHARED_NAME_LINE)
-    expect(namesOf(display)).toEqual(['Depot', 'Alpha', 'Bravo'])
+    expect(namesOf(display)).toEqual(['Depot', 'Alpha', 'Bravo', 'Depot'])
   })
 
   it('adds the branch stops once the player picks one at the fork', () => {
