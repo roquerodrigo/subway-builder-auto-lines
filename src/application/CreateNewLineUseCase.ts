@@ -89,6 +89,18 @@ export class CreateNewLineUseCase {
 
       this.store.state().confirmRouteChange?.()
       this.guard.end() // preview committed → release the guard
+
+      // confirmRouteChange sits behind a licence gate that silently no-ops
+      // (game-internals §5), so whether it took has to be read back rather than
+      // assumed. Reporting success blind tells the player the line exists, gives it
+      // trains, and leaves the preview open — the state that pops the game's
+      // "Unsaved Route Changes" modal.
+      const committed = findRoute(this.store.state().routes, routeId)
+      if (new Set((committed?.stNodes ?? []).map((stationNode) => stationNode.id)).size < 2) {
+        this.discard(routeId)
+        return false
+      }
+
       this.maintenance.stripTempRoutes()
       this.provisionService.execute(routeId) // trains + 5/10/15/30-min schedule
       return true

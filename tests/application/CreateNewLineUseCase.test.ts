@@ -216,6 +216,36 @@ describe('CreateNewLineUseCase', () => {
     })
   })
 
+  // confirmRouteChange sits behind a licence gate that silently no-ops
+  // (game-internals §5), so a commit that never happened looks exactly like one
+  // that did unless the route is read back.
+  describe('a commit the game silently refuses', () => {
+    function refusingFixture(): ReturnType<typeof createFixture> {
+      const fixture = createFixture()
+      fixture.state.confirmRouteChange = vi.fn()
+      return fixture
+    }
+
+    it('reports failure rather than claiming the line was built', async () => {
+      const { useCase } = refusingFixture()
+      expect(await useCase.execute(['a', 'b', 'c'])).toBe(false)
+    })
+
+    it('does not provision service for a line that was never committed', async () => {
+      const { provision, useCase } = refusingFixture()
+      await useCase.execute(['a', 'b', 'c'])
+      expect(provision).not.toHaveBeenCalled()
+    })
+
+    // A preview left open with the guard released is what pops the game's
+    // "Unsaved Route Changes" modal.
+    it('clears the preview it opened', async () => {
+      const { state, useCase } = refusingFixture()
+      await useCase.execute(['a', 'b', 'c'])
+      expect(state.previewRoute).toBeNull()
+    })
+  })
+
   describe('the line label', () => {
     it('replaces the auto-assigned letter with the next sequential number', async () => {
       const { builtRoute, useCase } = createFixture()
