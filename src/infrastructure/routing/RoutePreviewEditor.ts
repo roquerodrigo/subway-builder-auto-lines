@@ -86,12 +86,14 @@ export class RoutePreviewEditor {
     return added > 0 ? good : null
   }
 
-  // Close the preview and release the guard, whatever state they're in. Best-effort
-  // on purpose: it runs on the failure path, where the store is already unhappy and
-  // a throw here would bury the error that actually matters.
+  // Close the preview, release the guard, and clear what the abandoned attempt left
+  // behind — the game autosaves, so a half-built state outlives the failure.
+  // Best-effort on purpose: this runs on the failure path, where the store is
+  // already unhappy and throwing here would bury the error that actually matters.
   private abandonPreview(): void {
     try {
       this.store.state().setPreviewRoute?.(null)
+      this.maintenance.stripTempRoutes()
     } catch {
       /* the preview is the game's to lose at this point */
     }
