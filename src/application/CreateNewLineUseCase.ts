@@ -39,7 +39,9 @@ export class CreateNewLineUseCase {
     const addStationNodeIds = NewLinePlanner.addStationNodeIds(network, index, path)
 
     // Turnaround crossovers at both corridor ends BEFORE building, so the route's
-    // reversal path resolves (setTracks rebuilds the trackGraph).
+    // reversal path resolves (setTracks rebuilds the trackGraph). A build that later
+    // fails leaves them behind on purpose: injecting one is a no-op when it already
+    // exists, so they cost nothing and the next attempt reuses them.
     this.crossovers.inject([
       TerminusCrossoverFactory.create(initialState, index, path[0], path[1]),
       TerminusCrossoverFactory.create(initialState, index, path[path.length - 1], path[path.length - 2]),
