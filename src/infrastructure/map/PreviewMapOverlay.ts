@@ -78,7 +78,17 @@ export class PreviewMapOverlay {
 
     const data = this.featureCollection(pending)
 
-    const source = map.getSource(SOURCE_ID)
+    // getSource throws while the style is between loads — the same reason clear()
+    // guards it. Retrying keeps a draw that races a city load inside the overlay
+    // instead of throwing out into the panel that asked for a preview.
+    let source
+    try {
+      source = map.getSource(SOURCE_ID)
+    } catch {
+      this.retryDraw()
+      return
+    }
+
     if (source) {
       source.setData(data)
       this.ensureLayers(map, pending.color)

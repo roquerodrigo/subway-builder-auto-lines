@@ -210,6 +210,21 @@ describe('PreviewMapOverlay', () => {
       expect(featuresOf(map)).toBeDefined()
     })
 
+    // getSource throws while the style is between loads — which is why clear()
+    // guards the identical call. A show() racing a city load has to land on the
+    // retry that exists for this, not throw out of the overlay into the panel.
+    it('retries instead of throwing when the style cannot even be read', () => {
+      map.breakGetSource = true
+
+      const overlay = makeOverlay()
+      expect(() => overlay.show([LINE], STATIONS, RED)).not.toThrow()
+
+      map.breakGetSource = false
+      vi.advanceTimersByTime(RETRY_DELAY_MS)
+
+      expect(map.sources.has(SOURCE_ID)).toBe(true)
+    })
+
     it('retries when the style rejects the source despite reporting itself ready', () => {
       map.addSourceFailures = 1
 
