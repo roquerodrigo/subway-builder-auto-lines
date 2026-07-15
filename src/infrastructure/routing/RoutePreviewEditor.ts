@@ -32,7 +32,7 @@ export class RoutePreviewEditor {
         return { committed: false }
       }
 
-      const before = new Set((route.stNodes ?? []).map((n) => n.id)).size
+      const before = new Set(route.stNodes.map((n) => n.id)).size
       this.store.state().confirmRouteChange?.()
       this.guard.end() // preview committed → release the guard
       const after = findRoute(this.store.state().routes, routeId)
