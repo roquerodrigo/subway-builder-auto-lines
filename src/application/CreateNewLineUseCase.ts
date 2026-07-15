@@ -63,7 +63,7 @@ export class CreateNewLineUseCase {
       const overrides = color ? { bullet, color, shape: RouteShape.Square } : { bullet, shape: RouteShape.Square }
       state.setRoutes?.(
         (state.routes ?? []).map((route) =>
-          route.id === routeId ? Object.assign({}, route, overrides) : route,
+          (route.id === routeId ? Object.assign({}, route, overrides) : route),
         ),
         false,
       )

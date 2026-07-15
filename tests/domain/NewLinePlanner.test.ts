@@ -80,7 +80,7 @@ const DEEP_FORK: NetworkSpec = {
 const DEEP_FORK_THAT_FOLDS: NetworkSpec = {
   ...DEEP_FORK,
   stations: (DEEP_FORK.stations ?? []).map((station) =>
-    station.id === 'd2' ? { ...station, at: point(2.2, 1.5) } : station),
+    (station.id === 'd2' ? { ...station, at: point(2.2, 1.5) } : station)),
 }
 
 const DEEP_FORK_IDS = ['a', 'b', 'c', 'd', 'd2', 'e']

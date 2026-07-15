@@ -49,7 +49,7 @@ export class CarInventoryPolicy {
   ): number {
     return Math.ceil(
       this.peakCars(routes, trainType, defaultType, (route) =>
-        route.id === routeId ? maxCars || (route.carsPerTrain ?? carSet) : route.carsPerTrain ?? carSet,
+        (route.id === routeId ? maxCars || (route.carsPerTrain ?? carSet) : route.carsPerTrain ?? carSet),
       ),
     )
   }

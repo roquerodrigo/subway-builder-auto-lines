@@ -258,7 +258,7 @@ describe('TrackNetwork.railBetween', () => {
   it('ignores a platform the state no longer places on the map', () => {
     const state = buildNetwork(LINE)
     const stations = (state.stations ?? []).map((station) =>
-      station.id === 'a' ? { ...station, stNodeIds: [...(station.stNodeIds ?? []), 'a#gone'] } : station)
+      (station.id === 'a' ? { ...station, stNodeIds: [...(station.stNodeIds ?? []), 'a#gone'] } : station))
     const haunted = { ...state, stations }
     const network = new TrackNetwork(haunted, StationIndex.build(haunted))
     expect(network.railBetween('a', 'b')).toHaveLength(2)

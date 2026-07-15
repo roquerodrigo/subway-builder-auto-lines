@@ -79,7 +79,7 @@ function withNeighborPlatforms(state: GameState, stNodeIds: string[] | undefined
   return {
     ...state,
     stations: (state.stations ?? []).map((station) =>
-      station.id === 'neighbor' ? { ...station, stNodeIds } : station),
+      (station.id === 'neighbor' ? { ...station, stNodeIds } : station)),
   }
 }
 
@@ -169,7 +169,7 @@ describe('TerminusCrossoverFactory.create', () => {
   it('is null when the terminus lists no platforms at all', () => {
     const state = terminusState()
     const stations = (state.stations ?? []).map((station) =>
-      station.id === 'terminus' ? { ...station, stNodeIds: undefined } : station)
+      (station.id === 'terminus' ? { ...station, stNodeIds: undefined } : station))
     expect(crossoverFor({ ...state, stations })).toBeNull()
   })
 
