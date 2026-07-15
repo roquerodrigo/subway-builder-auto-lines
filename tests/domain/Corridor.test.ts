@@ -143,3 +143,23 @@ describe('Corridor.order', () => {
     expect(Corridor.order(network, new Set(['a', 'b']))).toEqual(['a', 'b'])
   })
 })
+
+// A spur running into a closed loop (a—b, b—c, c—d, d—b) is an ordinary shape in a
+// real city: a branch off a circle line. Walking out of the junction and around the
+// loop arrives back at the junction, and a corridor that lists a station twice makes
+// the caller lay that station's platforms twice — the cycle-closing corruption the
+// planner exists to avoid.
+describe('Corridor.longest on a spur into a loop', () => {
+  const adjacency = adjacencyOf([['a', 'b'], ['b', 'c'], ['c', 'd'], ['d', 'b']])
+  const ids = ['a', 'b', 'c', 'd']
+
+  it('never lists a station twice', () => {
+    const corridor = Corridor.longest(ids, adjacency)
+    expect(new Set(corridor).size).toBe(corridor.length)
+  })
+
+  it('does not walk back onto the station it started from', () => {
+    const corridor = Corridor.longest(ids, adjacency)
+    expect(corridor[corridor.length - 1]).not.toBe(corridor[0])
+  })
+})

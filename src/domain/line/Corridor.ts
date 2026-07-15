@@ -11,11 +11,16 @@ export class Corridor {
 
     const walk = (start: string, first: string): string[] => {
       const corridor: string[] = [start]
+      // A spur into a loop walks out of the junction, around the cycle, and back to
+      // where it began. Stopping there keeps a station out of the corridor twice —
+      // which would make the caller lay its platforms twice and close the loop on
+      // itself, the corruption the planner exists to avoid.
+      const seen = new Set([start])
       let prev = start
       let cur: null | string = first
-      let guard = 0
-      while (cur != null && guard++ < ids.length + 2) {
+      while (cur != null && !seen.has(cur)) {
         corridor.push(cur)
+        seen.add(cur)
         if (degree(cur) !== 2) {
           break
         } // junction or dead-end → stop here
