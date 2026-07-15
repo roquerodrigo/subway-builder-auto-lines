@@ -261,6 +261,36 @@ describe('RoutePreviewEditor', () => {
       expect(idsOf(game.state.routes?.[0])).toEqual(['node-a', 'node-b', 'node-c'])
     })
 
+    // This method opens the preview and takes the guard, so it owns unwinding them.
+    // A throw that left both held is what pops the game's "Unsaved Route Changes"
+    // modal, and the caller has no handle on the preview to clean up itself.
+    describe('when the commit throws', () => {
+      function throwingEditor(): RoutePreviewEditor {
+        const editor = makeEditor(createPreviewGame())
+        game.state.confirmRouteChange = vi.fn((): never => {
+          throw new Error('the game rejected the change')
+        })
+        return editor
+      }
+
+      it('lets the failure through', async () => {
+        await expect(throwingEditor().applyAdditions('route-1', ['node-b'])).rejects.toThrow()
+      })
+
+      it('closes the preview it opened', async () => {
+        const editor = throwingEditor()
+        await editor.applyAdditions('route-1', ['node-b']).catch(() => {})
+        const calls = previewCalls()
+        expect(calls[calls.length - 1]).toBeNull()
+      })
+
+      it('releases the route-edit guard', async () => {
+        const editor = throwingEditor()
+        await editor.applyAdditions('route-1', ['node-b']).catch(() => {})
+        expect(end).toHaveBeenCalled()
+      })
+    })
+
     it('releases the route-edit guard once the preview is committed', async () => {
       const editor = makeEditor(createPreviewGame())
 

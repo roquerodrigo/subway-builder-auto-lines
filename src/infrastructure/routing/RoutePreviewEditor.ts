@@ -25,20 +25,27 @@ export class RoutePreviewEditor {
       throw new Error('line not found')
     }
 
-    const grown = await this.growPreview(route, addStationNodeIds)
-    if (!grown) {
-      this.store.state().setPreviewRoute?.(null)
-      this.guard.end()
-      return { committed: false }
-    }
+    try {
+      const grown = await this.growPreview(route, addStationNodeIds)
+      if (!grown) {
+        this.abandonPreview()
+        return { committed: false }
+      }
 
-    const before = new Set((route.stNodes ?? []).map((n) => n.id)).size
-    this.store.state().confirmRouteChange?.()
-    this.guard.end() // preview committed → release the guard
-    const after = findRoute(this.store.state().routes, routeId)
-    const grew = !!after && new Set(after.stNodes.map((n) => n.id)).size > before
-    this.maintenance.stripTempRoutes()
-    return { committed: grew }
+      const before = new Set((route.stNodes ?? []).map((n) => n.id)).size
+      this.store.state().confirmRouteChange?.()
+      this.guard.end() // preview committed → release the guard
+      const after = findRoute(this.store.state().routes, routeId)
+      const grew = !!after && new Set(after.stNodes.map((n) => n.id)).size > before
+      this.maintenance.stripTempRoutes()
+      return { committed: grew }
+    } catch (error) {
+      // This method opens the preview and takes the guard, so it owns unwinding
+      // them: a throw that left both held is what pops the game's "Unsaved Route
+      // Changes" modal, and the caller has no handle on the preview to undo it.
+      this.abandonPreview()
+      throw error
+    }
   }
 
   // Opens a preview off `route` and adds each node ONE AT A TIME, keeping only the
@@ -77,5 +84,17 @@ export class RoutePreviewEditor {
       }
     }
     return added > 0 ? good : null
+  }
+
+  // Close the preview and release the guard, whatever state they're in. Best-effort
+  // on purpose: it runs on the failure path, where the store is already unhappy and
+  // a throw here would bury the error that actually matters.
+  private abandonPreview(): void {
+    try {
+      this.store.state().setPreviewRoute?.(null)
+    } catch {
+      /* the preview is the game's to lose at this point */
+    }
+    this.guard.end()
   }
 }
