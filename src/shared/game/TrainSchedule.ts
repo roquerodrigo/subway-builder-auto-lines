@@ -3,7 +3,7 @@
 // falls back to `lowDemand` when the game reads it.
 export interface TrainSchedule {
   highDemand: number
-  mediumDemand: number
   lowDemand: number
+  mediumDemand: number
   veryLowDemand?: number
 }

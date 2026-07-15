@@ -13,6 +13,11 @@ import { UserAction } from '@/shared/game/UserAction'
 // (worst case: the modal returns, nothing breaks).
 const MAX_FIBER_WALK_DEPTH = 500
 
+interface FiberNode {
+  memoizedProps?: { value?: { setUserAction?: (value: string) => void, userAction?: unknown } }
+  return?: FiberNode | null
+}
+
 export class RouteEditGuard {
   begin(): void {
     this.setUserAction(UserAction.DrawLineTrack)
@@ -36,6 +41,7 @@ export class RouteEditGuard {
           'userAction' in contextValue
         ) {
           contextValue.setUserAction(value)
+
           return
         }
         fiber = fiber.return ?? null
@@ -44,9 +50,4 @@ export class RouteEditGuard {
       /* guard suppression is best-effort */
     }
   }
-}
-
-interface FiberNode {
-  memoizedProps?: { value?: { setUserAction?: (value: string) => void, userAction?: unknown } }
-  return?: FiberNode | null
 }

@@ -10,12 +10,8 @@ import { GameStore } from '@/infrastructure/store/GameStore'
 
 const TEMP_ROUTE_ID = 'route-temp'
 
-function tempRoute(): Route {
-  return { id: TEMP_ROUTE_ID, stNodes: [], tempParentId: 'route-1' }
-}
-
 function committedRoute(): Route {
-  return { id: 'route-1', stNodes: [{ id: 'node-1', center: [0, 0] }] }
+  return { id: 'route-1', stNodes: [{ center: [0, 0], id: 'node-1' }] }
 }
 
 // The use case is exercised against the real guard and the real maintenance over a
@@ -35,25 +31,30 @@ function createFixture(overrides: Partial<GameState> = {}) {
     state.routes = routes
   })
   const state: GameState = {
+    deleteRoute,
     money: 0,
     ownedTrainCount: 0,
     previewRoute: tempRoute(),
     routes: [committedRoute(), tempRoute()],
-    tracks: [],
-    trains: [{ id: 'train-1', routeId: TEMP_ROUTE_ID }],
-    deleteRoute,
     setPreviewRoute,
     setRoutes,
     setTrains: (trains) => {
       state.trains = trains
     },
+    tracks: [],
+    trains: [{ id: 'train-1', routeId: TEMP_ROUTE_ID }],
     ...overrides,
   }
   const store = new GameStore({ getState: () => state })
   const guard = new RouteEditGuard()
   const guardEnd = vi.spyOn(guard, 'end')
   const useCase = new DiscardNewLinePreviewUseCase(store, guard, new RouteMaintenance(store))
+
   return { deleteRoute, guardEnd, setPreviewRoute, setRoutes, state, useCase }
+}
+
+function tempRoute(): Route {
+  return { id: TEMP_ROUTE_ID, stNodes: [], tempParentId: 'route-1' }
 }
 
 afterEach(() => {

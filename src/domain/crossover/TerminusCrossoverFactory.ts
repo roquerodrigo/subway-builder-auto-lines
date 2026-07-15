@@ -86,18 +86,18 @@ export class TerminusCrossoverFactory {
         'xover-' + Date.now() + '-' + Math.floor(distance * 1000)
 
     return {
-      id: uid,
-      coords: [c1, c2],
       buildType: CROSSOVER_CONSTRUCTION,
+      coords: [c1, c2],
+      createdAt: Date.now(),
       displayType: CROSSOVER_CONSTRUCTION,
-      type: CROSSOVER_TYPE,
-      reversable: true,
+      endElevation: fars[1].elevation ?? 0,
+      id: uid,
       interactable: false,
       length: Math.max(1, distance),
+      reversable: true,
       startElevation: fars[0].elevation ?? 0,
-      endElevation: fars[1].elevation ?? 0,
       trackType: fars[0].trackType || DEFAULT_TRAIN_TYPE,
-      createdAt: Date.now(),
+      type: CROSSOVER_TYPE,
       waterIntersectionPercentage: 0,
     }
   }

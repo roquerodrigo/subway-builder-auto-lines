@@ -13,18 +13,18 @@ export interface NewLineBranch {
   stationIds: string[]
 }
 
+export interface NewLineCorridor {
+  forks: NewLineFork[]
+  path: string[]
+}
+
 // A fork at one end of the base corridor: the junction and the branches the line
 // could continue into. `end` says which end of the base path the branch attaches.
 export interface NewLineFork {
-  atStationId: string
   atName: string
+  atStationId: string
   end: 'end' | 'start'
   options: NewLineBranch[]
-}
-
-export interface NewLineCorridor {
-  path: string[]
-  forks: NewLineFork[]
 }
 
 export type NewLineForkChoices = Record<string, NewLineBranch | null | undefined>
@@ -47,6 +47,7 @@ export class NewLinePlanner {
           }
         }
       }
+
       return null
     }
 
@@ -74,6 +75,7 @@ export class NewLinePlanner {
         push(farEnd[0])
       }
     }
+
     return addStationNodeIds
   }
 
@@ -92,7 +94,8 @@ export class NewLinePlanner {
       path = this.resolveEnd(network, index, groupSet, path, 'start', forks)
       path = this.resolveEnd(network, index, groupSet, path, 'end', forks)
     }
-    return { path, forks }
+
+    return { forks, path }
   }
 
   // The effective ordered corridor once the chosen branches are attached at the
@@ -107,6 +110,7 @@ export class NewLinePlanner {
       path = this.attach(path, branch.stationIds, fork.end)
     }
     const seen = new Set<string>()
+
     return path.filter((id) => (seen.has(id) ? false : (seen.add(id), true)))
   }
 
@@ -134,6 +138,7 @@ export class NewLinePlanner {
     // in the branch it's the station we came from.
     const folds = (prev: null | string, current: string, next: string): boolean => {
       const from = current === junction ? baseNeighbor : prev
+
       return from !== null && network.bendsBack(current, from, next)
     }
     const paths = BranchExplorer.leafPaths(
@@ -142,10 +147,12 @@ export class NewLinePlanner {
       pathSet,
       folds,
     )
+
     return paths
       .filter((stationIds) => stationIds.length > 0)
       .map((stationIds) => {
         const leaf = stationIds[stationIds.length - 1]
+
         return { key: leaf, name: index.name(leaf), stationIds }
       })
   }
@@ -170,6 +177,7 @@ export class NewLinePlanner {
     if (options.length >= 2) {
       forks.push({ atName: index.name(junction), atStationId: junction, end, options })
     }
+
     return path
   }
 }

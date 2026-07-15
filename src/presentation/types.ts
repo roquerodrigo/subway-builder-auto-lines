@@ -4,6 +4,6 @@ export enum PanelMode {
 }
 
 export interface StationListItem {
-  name: string
   isNew: boolean
+  name: string
 }

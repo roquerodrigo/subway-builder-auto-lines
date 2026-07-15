@@ -19,27 +19,6 @@ import { GameStore } from '@/infrastructure/store/GameStore'
 
 const ROUTE_ID = 'route-1'
 
-function crossover(id: string): Track {
-  return { id, coords: [[0, 0], [0, 1]], reversable: true, type: 'scissors-crossover' }
-}
-
-function endpoint(overrides: Partial<Endpoint> = {}): Endpoint {
-  return {
-    stationId: 'A',
-    name: 'A Station',
-    autoStationNodeIds: [],
-    autoNames: [],
-    autoStationIds: [],
-    fork: null,
-    ...overrides,
-  }
-}
-
-function forkTo(stationIds: string[], applyStationNodeIds: string[]): ForkOption {
-  const terminus = stationIds[stationIds.length - 1]
-  return { stationId: terminus, name: `${terminus} Station`, stationIds, applyStationNodeIds }
-}
-
 // The use case is exercised against the real crossover injector and the real store
 // handle: what it writes into the game (setTracks) is the point, and a plan is a
 // pure value object, so the real one stands in for the planner's output.
@@ -62,16 +41,39 @@ function createFixture() {
   const provision = vi.spyOn(provisionService, 'execute').mockImplementation(() => {})
   const createCrossover = vi.spyOn(TerminusCrossoverFactory, 'create').mockReturnValue(crossover('crossover-1'))
   const index = StationIndex.build(state)
+
   return {
     applyAdditions,
     createCrossover,
     index,
+    plan: (endpoints: Endpoint[]) => new ExpansionPlan(index, new Set(), new Set(), endpoints),
     provision,
     setTracks,
     state,
-    plan: (endpoints: Endpoint[]) => new ExpansionPlan(index, new Set(), new Set(), endpoints),
     useCase: new ExtendLineUseCase(store, new CrossoverInjector(store), previewEditor, provisionService),
   }
+}
+
+function crossover(id: string): Track {
+  return { coords: [[0, 0], [0, 1]], id, reversable: true, type: 'scissors-crossover' }
+}
+
+function endpoint(overrides: Partial<Endpoint> = {}): Endpoint {
+  return {
+    autoNames: [],
+    autoStationIds: [],
+    autoStationNodeIds: [],
+    fork: null,
+    name: 'A Station',
+    stationId: 'A',
+    ...overrides,
+  }
+}
+
+function forkTo(stationIds: string[], applyStationNodeIds: string[]): ForkOption {
+  const terminus = stationIds[stationIds.length - 1]
+
+  return { applyStationNodeIds, name: `${terminus} Station`, stationId: terminus, stationIds }
 }
 
 afterEach(() => {
@@ -204,7 +206,7 @@ describe('ExtendLineUseCase', () => {
     it('builds one per growable endpoint and skips the endpoints that stay put', async () => {
       const { createCrossover, plan, useCase } = createFixture()
       const growable = endpoint({ autoStationIds: ['B'], autoStationNodeIds: ['B-node'] })
-      const stuck = endpoint({ stationId: 'Z', name: 'Z Station' })
+      const stuck = endpoint({ name: 'Z Station', stationId: 'Z' })
       await useCase.execute(ROUTE_ID, plan([growable, stuck]), {})
       expect(createCrossover).toHaveBeenCalledTimes(1)
     })
@@ -216,8 +218,8 @@ describe('ExtendLineUseCase', () => {
       await useCase.execute(ROUTE_ID, plan([growable]), {})
       expect(setTracks).toHaveBeenCalledWith({
         newTracks: [crossover('existing'), crossover('crossover-1')],
-        regenStations: false,
         regenRoutesWithTrackIDs: [],
+        regenStations: false,
       })
     })
 

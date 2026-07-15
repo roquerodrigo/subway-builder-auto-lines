@@ -11,8 +11,8 @@ import { realRoutes } from '@/presentation/labels'
 import { PanelMode } from '@/presentation/types'
 
 export interface ExtendPlanData {
-  plan: ExpansionPlan
   order: string[]
+  plan: ExpansionPlan
   railPath: (stationIds: string[]) => Coordinate[]
   route: Route
 }
@@ -39,7 +39,8 @@ export function useExtendPlan(
     const plan = LineExpansionPlanner.plan(state, route)
     const network = new TrackNetwork(state, plan.index)
     const order = Corridor.order(network, plan.lineStationIds)
-    return { plan, order, railPath: (stationIds) => network.railPath(stationIds), route }
+
+    return { order, plan, railPath: (stationIds) => network.railPath(stationIds), route }
     // `dependencies` is stable; keying on [mode, selection, refreshKey] is deliberate (see above).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, selection, refreshKey])

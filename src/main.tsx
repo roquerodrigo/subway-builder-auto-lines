@@ -22,10 +22,12 @@ function bootstrap(): void {
   const storeCallbacks = window.__subwayBuilder_storeCallbacks__
   if (!api) {
     logger.error('SubwayBuilderAPI not found!')
+
     return
   }
   if (!storeCallbacks || typeof storeCallbacks.getState !== 'function') {
     logger.error('internal store not found — mod disabled.')
+
     return
   }
 
@@ -45,14 +47,14 @@ function bootstrap(): void {
   const discardPreview = new DiscardNewLinePreviewUseCase(store, guard, maintenance)
 
   const panel = createAutoLinesPanel({
-    store,
     api,
-    maintenance,
-    previewOverlay,
-    extendLine,
-    previewNewLine,
     createNewLine,
     discardPreview,
+    extendLine,
+    maintenance,
+    previewNewLine,
+    previewOverlay,
+    store,
   })
 
   const registrar = new FloatingPanelRegistrar(api, panel)

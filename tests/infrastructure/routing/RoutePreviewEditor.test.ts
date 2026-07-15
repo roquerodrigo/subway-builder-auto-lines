@@ -27,14 +27,6 @@ interface PreviewGameOptions {
   unpathableStNodeIds?: string[]
 }
 
-function makeRoute(overrides: Partial<Route> = {}): Route {
-  return { id: 'route-1', stNodes: [{ id: 'node-a', center: [0, 0] }], ...overrides }
-}
-
-function idsOf(route: null | Route | undefined): string[] {
-  return (route?.stNodes ?? []).map((node) => node.id)
-}
-
 // Models the game's preview flow closely enough to exercise the editor's
 // contract: a preview opened off a route, one queued change at a time, an async
 // batch that either grows the preview or throws, and a commit that writes back.
@@ -45,23 +37,6 @@ function createPreviewGame(options: PreviewGameOptions = {}): PreviewGame {
   let pending: PreviewRouteChange[] = []
 
   const fake = createFakeGameStore({
-    previewRoute: null,
-    routes: options.routes ?? [makeRoute()],
-
-    setPreviewRoute: vi.fn((route: null | Route): void => {
-      fake.state.previewRoute = route
-    }),
-
-    setManualRouteOrdering: vi.fn(),
-
-    clearPendingStNodeChanges: vi.fn((): void => {
-      pending = []
-    }),
-
-    changePreviewRoute: vi.fn((change: PreviewRouteChange): void => {
-      pending.push(change)
-    }),
-
     batchPreviewRouteUpdates: vi.fn((): Promise<void> => {
       const changes = pending
       pending = []
@@ -76,10 +51,18 @@ function createPreviewGame(options: PreviewGameOptions = {}): PreviewGame {
         ordered.push(change.stNodeId)
         fake.state.previewRoute = {
           ...preview,
-          stNodes: [...preview.stNodes, { id: change.stNodeId, center: [0, 0] }],
+          stNodes: [...preview.stNodes, { center: [0, 0], id: change.stNodeId }],
         }
       }
+
       return Promise.resolve()
+    }),
+    changePreviewRoute: vi.fn((change: PreviewRouteChange): void => {
+      pending.push(change)
+    }),
+
+    clearPendingStNodeChanges: vi.fn((): void => {
+      pending = []
     }),
 
     confirmRouteChange: vi.fn((): void => {
@@ -93,6 +76,16 @@ function createPreviewGame(options: PreviewGameOptions = {}): PreviewGame {
       fake.state.previewRoute = null
     }),
 
+    previewRoute: null,
+
+    routes: options.routes ?? [makeRoute()],
+
+    setManualRouteOrdering: vi.fn(),
+
+    setPreviewRoute: vi.fn((route: null | Route): void => {
+      fake.state.previewRoute = route
+    }),
+
     setRoutes: vi.fn((routes: Route[]): void => {
       fake.state.routes = routes
     }),
@@ -101,6 +94,14 @@ function createPreviewGame(options: PreviewGameOptions = {}): PreviewGame {
   })
 
   return { ...fake, ordered }
+}
+
+function idsOf(route: null | Route | undefined): string[] {
+  return (route?.stNodes ?? []).map((node) => node.id)
+}
+
+function makeRoute(overrides: Partial<Route> = {}): Route {
+  return { id: 'route-1', stNodes: [{ center: [0, 0], id: 'node-a' }], ...overrides }
 }
 
 describe('RoutePreviewEditor', () => {
@@ -115,11 +116,13 @@ describe('RoutePreviewEditor', () => {
     game = previewGame
     maintenance = new RouteMaintenance(previewGame.store)
     stripTempRoutes = vi.spyOn(maintenance, 'stripTempRoutes')
+
     return new RoutePreviewEditor(previewGame.store, guard, maintenance)
   }
 
   function previewCalls(): Array<null | Route> {
     const setPreviewRoute = game.state.setPreviewRoute as Mock<(route: null | Route) => void>
+
     return setPreviewRoute.mock.calls.map(([route]) => route)
   }
 
@@ -183,8 +186,8 @@ describe('RoutePreviewEditor', () => {
 
       expect(game.state.changePreviewRoute).toHaveBeenCalledTimes(2)
       expect(game.state.batchPreviewRouteUpdates).toHaveBeenCalledTimes(2)
-      expect(game.state.changePreviewRoute).toHaveBeenNthCalledWith(1, { stNodeId: 'node-b', action: 'add' })
-      expect(game.state.changePreviewRoute).toHaveBeenNthCalledWith(2, { stNodeId: 'node-c', action: 'add' })
+      expect(game.state.changePreviewRoute).toHaveBeenNthCalledWith(1, { action: 'add', stNodeId: 'node-b' })
+      expect(game.state.changePreviewRoute).toHaveBeenNthCalledWith(2, { action: 'add', stNodeId: 'node-c' })
       expect(game.ordered).toEqual(['node-b', 'node-c'])
     })
 
@@ -270,6 +273,7 @@ describe('RoutePreviewEditor', () => {
         game.state.confirmRouteChange = vi.fn((): never => {
           throw new Error('the game rejected the change')
         })
+
         return editor
       }
 
@@ -351,9 +355,9 @@ describe('RoutePreviewEditor', () => {
     it('measures growth on distinct stations, not the out-and-back sequence', async () => {
       const outAndBack = makeRoute({
         stNodes: [
-          { id: 'node-a', center: [0, 0] },
-          { id: 'node-z', center: [1, 0] },
-          { id: 'node-a', center: [0, 0] },
+          { center: [0, 0], id: 'node-a' },
+          { center: [1, 0], id: 'node-z' },
+          { center: [0, 0], id: 'node-a' },
         ],
       })
       const editor = makeEditor(createPreviewGame({ routes: [outAndBack] }))

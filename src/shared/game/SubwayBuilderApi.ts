@@ -2,31 +2,31 @@ import type { Route } from '@/shared/game/Route'
 import type { TrainType } from '@/shared/game/TrainType'
 
 export interface FloatingPanelConfig {
-  id: string
-  icon: string
-  tooltip: string
-  title: string
-  defaultWidth?: number
   defaultHeight?: number
-  minWidth?: number
+  defaultWidth?: number
+  icon: string
+  id: string
   minHeight?: number
-  render: (props: { width?: number, height?: number }) => unknown
+  minWidth?: number
+  render: (props: { height?: number, width?: number }) => unknown
+  title: string
+  tooltip: string
 }
 
 // The public modding API (window.SubwayBuilderAPI). Only the namespaces/members
 // the mod actually uses are typed; all are optional and feature-detected.
 export interface SubwayBuilderApi {
-  utils?: { React?: typeof import('react'), getMap?(): unknown }
-  ui?: {
-    addFloatingPanel?(config: FloatingPanelConfig): void
-    unregisterComponent?(location: string, id: string): void
-    showNotification?(message: string, kind?: string): void
-  }
   gameState?: {
     getRoutes?(): Route[]
   }
+  hooks?: Record<string, ((callback: () => void) => void) | undefined>
   trains?: {
     getTrainType?(id: string): TrainType | undefined
   }
-  hooks?: Record<string, ((callback: () => void) => void) | undefined>
+  ui?: {
+    addFloatingPanel?(config: FloatingPanelConfig): void
+    showNotification?(message: string, kind?: string): void
+    unregisterComponent?(location: string, id: string): void
+  }
+  utils?: { getMap?(): unknown, React?: typeof import('react') }
 }

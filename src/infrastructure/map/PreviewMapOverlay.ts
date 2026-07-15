@@ -86,6 +86,7 @@ export class PreviewMapOverlay {
       source = map.getSource(SOURCE_ID)
     } catch {
       this.retryDraw()
+
       return
     }
 
@@ -93,6 +94,7 @@ export class PreviewMapOverlay {
       source.setData(data)
       this.ensureLayers(map, pending.color)
       this.startPulse()
+
       return
     }
 
@@ -101,6 +103,7 @@ export class PreviewMapOverlay {
     // than give up — the pending draw always converges once the map settles.
     if (!map.isStyleLoaded()) {
       this.retryDraw()
+
       return
     }
 
@@ -170,6 +173,7 @@ export class PreviewMapOverlay {
     for (const station of pending.stations) {
       features.push({ geometry: { coordinates: station, type: 'Point' }, type: 'Feature' })
     }
+
     return { features, type: 'FeatureCollection' }
   }
 
@@ -194,6 +198,7 @@ export class PreviewMapOverlay {
       const map = this.map()
       if (!this.pending || !map || !map.getLayer(GLOW_LAYER)) {
         this.animationFrame = null
+
         return
       }
       const pulse = (Math.sin((timestamp / PULSE_PERIOD_MS) * 2 * Math.PI) + 1) / 2

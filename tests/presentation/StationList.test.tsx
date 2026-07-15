@@ -48,15 +48,9 @@ function connectorColors(container: HTMLElement): string[] {
     .map((element) => element.style.background)
 }
 
-function planFor(spec: CitySpec, route: Route): { order: string[], plan: ExpansionPlan } {
-  const state = buildCity(spec)
-  const plan = LineExpansionPlanner.plan(state, route)
-  const network = new TrackNetwork(state, StationIndex.build(state))
-  return { order: Corridor.order(network, plan.lineStationIds), plan }
-}
-
 function displayFor(spec: CitySpec, route: Route): StationListItem[] {
   const { order, plan } = planFor(spec, route)
+
   return buildDisplay(plan, order, {})
 }
 
@@ -66,6 +60,14 @@ function namesOf(items: StationListItem[]): string[] {
 
 function newNames(items: StationListItem[]): string[] {
   return namesOf(items.filter((item) => item.isNew))
+}
+
+function planFor(spec: CitySpec, route: Route): { order: string[], plan: ExpansionPlan } {
+  const state = buildCity(spec)
+  const plan = LineExpansionPlanner.plan(state, route)
+  const network = new TrackNetwork(state, StationIndex.build(state))
+
+  return { order: Corridor.order(network, plan.lineStationIds), plan }
 }
 
 describe('StationList', () => {

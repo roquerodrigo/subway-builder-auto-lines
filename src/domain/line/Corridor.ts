@@ -33,6 +33,7 @@ export class Corridor {
         prev = cur
         cur = next
       }
+
       return corridor
     }
 
@@ -108,6 +109,7 @@ export class Corridor {
       visit(start)
     }
     ids.forEach((stationId) => visit(stationId)) // any disconnected remainder
+
     return order
   }
 }

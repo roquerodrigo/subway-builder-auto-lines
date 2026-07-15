@@ -15,13 +15,9 @@ const ROUTE_ID = 'route-1'
 const CYCLE_SECONDS = 1800
 const SCHEDULE_FOR_CYCLE: TrainSchedule = {
   highDemand: 6,
-  mediumDemand: 3,
   lowDemand: 2,
+  mediumDemand: 3,
   veryLowDemand: 1,
-}
-
-function routeWithTimings(stComboTimings: StComboTiming[] | undefined): Route {
-  return { id: ROUTE_ID, stNodes: [{ id: 'node-1', center: [0, 0] }], stComboTimings }
 }
 
 function createFixture(overrides: Partial<GameState> = {}) {
@@ -39,14 +35,19 @@ function createFixture(overrides: Partial<GameState> = {}) {
   const ensureCarInventory = vi.spyOn(fleet, 'ensureCarInventory').mockImplementation(() => {})
   const spawnForSchedule = vi.spyOn(fleet, 'spawnForSchedule').mockImplementation(() => {})
   const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
   return {
     ensureCarInventory,
     spawnForSchedule,
     state,
     updateRouteProperty,
-    warn,
     useCase: new ProvisionServiceUseCase(store, fleet),
+    warn,
   }
+}
+
+function routeWithTimings(stComboTimings: StComboTiming[] | undefined): Route {
+  return { id: ROUTE_ID, stComboTimings, stNodes: [{ center: [0, 0], id: 'node-1' }] }
 }
 
 afterEach(() => {

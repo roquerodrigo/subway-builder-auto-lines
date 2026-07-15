@@ -10,7 +10,7 @@ import type { FakeGameStore } from '../fakeGameStore'
 import { createFakeGameStore } from '../fakeGameStore'
 
 function makeRoute(overrides: Partial<Route> = {}): Route {
-  return { id: 'route-1', stNodes: [{ id: 'node-1', center: [0, 0] }], ...overrides }
+  return { id: 'route-1', stNodes: [{ center: [0, 0], id: 'node-1' }], ...overrides }
 }
 
 function makeTrain(routeId: string): Train {
@@ -24,9 +24,9 @@ describe('RouteMaintenance', () => {
   beforeEach(() => {
     fake = createFakeGameStore({
       routes: [makeRoute()],
-      trains: [makeTrain('route-1')],
       setRoutes: vi.fn(),
       setTrains: vi.fn(),
+      trains: [makeTrain('route-1')],
     })
     maintenance = new RouteMaintenance(fake.store)
   })

@@ -54,6 +54,7 @@ function renderTab(options: TabOptions = {}) {
       selection={groups[0]?.key ?? null}
     />,
   )
+
   return { onChoose, onCycleColor, onSelectGroup, view }
 }
 

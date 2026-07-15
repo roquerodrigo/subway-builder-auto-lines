@@ -33,6 +33,7 @@ export class ExtendLineUseCase {
     if (result.committed) {
       this.provisionService.execute(routeId)
     }
+
     return { committed: result.committed, hadAdditions: true }
   }
 
@@ -51,6 +52,7 @@ export class ExtendLineUseCase {
       }
       const terminus = chain[chain.length - 1]
       const neighbor = chain.length >= 2 ? chain[chain.length - 2] : endpoint.stationId
+
       return TerminusCrossoverFactory.create(state, plan.index, terminus, neighbor)
     })
     this.crossovers.inject(diagonals)

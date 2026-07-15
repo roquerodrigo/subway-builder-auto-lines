@@ -49,6 +49,7 @@ export class BranchExplorer {
         paths.push(path)
       }
     }
+
     return paths
   }
 }

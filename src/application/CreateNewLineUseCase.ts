@@ -75,6 +75,7 @@ export class CreateNewLineUseCase {
       const routeClone = findRoute(this.store.state().routes, routeId)
       if (!routeClone) {
         this.discard(routeId)
+
         return false
       }
 
@@ -86,6 +87,7 @@ export class CreateNewLineUseCase {
       )
       if (coveredStations.size < 2) {
         this.discard(routeId)
+
         return false
       }
 
@@ -100,11 +102,13 @@ export class CreateNewLineUseCase {
       const committed = findRoute(this.store.state().routes, routeId)
       if (new Set((committed?.stNodes ?? []).map((stationNode) => stationNode.id)).size < 2) {
         this.discard(routeId)
+
         return false
       }
 
       this.maintenance.stripTempRoutes()
       this.provisionService.execute(routeId) // trains + 5/10/15/30-min schedule
+
       return true
     } catch (error) {
       this.discard(routeId)

@@ -29,6 +29,7 @@ export class RoutePreviewEditor {
       const grown = await this.growPreview(route, addStationNodeIds)
       if (!grown) {
         this.abandonPreview()
+
         return { committed: false }
       }
 
@@ -38,6 +39,7 @@ export class RoutePreviewEditor {
       const after = findRoute(this.store.state().routes, routeId)
       const grew = !!after && new Set(after.stNodes.map((n) => n.id)).size > before
       this.maintenance.stripTempRoutes()
+
       return { committed: grew }
     } catch (error) {
       // This method opens the preview and takes the guard, so it owns unwinding
@@ -69,7 +71,7 @@ export class RoutePreviewEditor {
       if (typeof state.clearPendingStNodeChanges === 'function') {
         state.clearPendingStNodeChanges()
       }
-      state.changePreviewRoute?.({ stNodeId: id, action: PreviewRouteAction.Add })
+      state.changePreviewRoute?.({ action: PreviewRouteAction.Add, stNodeId: id })
       try {
         await this.store.state().batchPreviewRouteUpdates?.()
         const preview = this.store.state().previewRoute
@@ -83,6 +85,7 @@ export class RoutePreviewEditor {
         this.store.state().setPreviewRoute?.(good)
       }
     }
+
     return added > 0 ? good : null
   }
 

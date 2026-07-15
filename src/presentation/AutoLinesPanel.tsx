@@ -51,10 +51,11 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
         return null
       }
       const path = NewLinePlanner.effectivePath(newLinePreview.corridor, newLineChoices)
+
       return {
-        path,
         names: path.map((id) => newLinePreview.nameById[id] ?? '?'),
         ok: path.length >= 2,
+        path,
       }
     }, [newLinePreview, newLineChoices])
 
@@ -69,6 +70,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
       // On the success screen, keep the map clear — don't highlight the next group.
       if (mode === PanelMode.New && successMessage) {
         overlay.clear()
+
         return () => overlay.clear()
       }
       const lines: Coordinate[][] = []
@@ -108,6 +110,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
       } else {
         overlay.clear()
       }
+
       return () => overlay.clear()
     }, [mode, newLine, newLinePreview, planData, choices, newLineColor, successMessage])
 

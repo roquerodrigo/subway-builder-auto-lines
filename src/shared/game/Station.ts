@@ -3,6 +3,6 @@
 export interface Station {
   id: string
   name: string
-  stNodeIds?: string[]
   routeIds?: string[]
+  stNodeIds?: string[]
 }

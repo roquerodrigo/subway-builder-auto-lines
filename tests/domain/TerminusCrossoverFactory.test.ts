@@ -12,14 +12,18 @@ const PLATFORM_HALF_LENGTH = 0.0005
 const PLATFORM_OFFSET = 0.00002
 
 interface TerminusSpec {
+  ghostPlatform?: boolean
+  linkFarEnds?: boolean
   neighborAt?: Coordinate
   platforms?: number
-  trackType?: null | string
-  startElevation?: number | undefined
-  linkFarEnds?: boolean
-  ghostPlatform?: boolean
-  tracklessPlatform?: boolean
   platformSpread?: number
+  startElevation?: number | undefined
+  tracklessPlatform?: boolean
+  trackType?: null | string
+}
+
+function crossoverFor(state: GameState, terminus = 'terminus', neighbor = 'neighbor'): null | Track {
+  return TerminusCrossoverFactory.create(state, StationIndex.build(state), terminus, neighbor)
 }
 
 // A terminus station at the origin with two platform tracks running east–west, and
@@ -61,18 +65,14 @@ function terminusState(spec: TerminusSpec = {}): GameState {
   return {
     money: 0,
     ownedTrainCount: 0,
-    stNodes: stationNodes,
     stations: [
       { id: 'terminus', name: 'Terminus', stNodeIds: platformIds },
       { id: 'neighbor', name: 'Neighbor', stNodeIds: ['n#0'] },
     ],
+    stNodes: stationNodes,
     trackGraph: graph,
     tracks,
   }
-}
-
-function crossoverFor(state: GameState, terminus = 'terminus', neighbor = 'neighbor'): null | Track {
-  return TerminusCrossoverFactory.create(state, StationIndex.build(state), terminus, neighbor)
 }
 
 function withNeighborPlatforms(state: GameState, stNodeIds: string[] | undefined): GameState {

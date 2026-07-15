@@ -13,6 +13,7 @@ const DASHED = coordinateKey('dashed')
 
 function graphOver(keys: string[]): TrackGraph {
   const present = new Set(keys)
+
   return {
     get: (): undefined => undefined,
     has: (key): boolean => present.has(key),

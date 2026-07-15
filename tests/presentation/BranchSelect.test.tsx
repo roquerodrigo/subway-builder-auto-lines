@@ -8,8 +8,8 @@ import { FORK_LABEL_COLOR } from '@/presentation/theme'
 import { asRenderedColor } from './support/renderedStyle'
 
 const OPTIONS = [
-  { value: '', label: '— Don\'t continue —' },
-  { value: 's5', label: '→ Echo' },
+  { label: '— Don\'t continue —', value: '' },
+  { label: '→ Echo', value: 's5' },
 ]
 
 describe('BranchSelect', () => {

@@ -26,20 +26,16 @@ const CYCLE_SECONDS = 1800
 const GENERATED_BULLET = 'A'
 const GENERATED_COLOR = '#123456'
 
-function crossover(id: string): Track {
-  return { id, coords: [[0, 0], [0, 1]], reversable: true, type: 'scissors-crossover' }
-}
-
 // A straight three-station corridor with a turnaround at each end.
 function corridorNetwork(): GameState {
   return buildNetwork({
-    stations: [
-      { id: 'a', at: point(0, 0) },
-      { id: 'b', at: point(1, 0) },
-      { id: 'c', at: point(2, 0) },
-    ],
-    links: [{ between: ['a', 'b'] }, { between: ['b', 'c'] }],
     crossovers: ['a', 'c'],
+    links: [{ between: ['a', 'b'] }, { between: ['b', 'c'] }],
+    stations: [
+      { at: point(0, 0), id: 'a' },
+      { at: point(1, 0), id: 'b' },
+      { at: point(2, 0), id: 'c' },
+    ],
   })
 }
 
@@ -57,12 +53,13 @@ function createFixture() {
   const generateRoute = vi.fn((): Route => {
     generatedRoutes++
     const route: Route = {
-      id: `route-${generatedRoutes}`,
       bullet: GENERATED_BULLET,
       color: GENERATED_COLOR,
+      id: `route-${generatedRoutes}`,
       stNodes: [],
     }
     state.routes = [...(state.routes ?? []), route]
+
     return route
   })
   // The game's deleteRoute drops the route AND its trains — unlike setRoutes, which
@@ -86,26 +83,14 @@ function createFixture() {
       if (route.id !== preview.id) {
         return route
       }
-      return { ...route, stNodes: preview.stNodes, stComboTimings: [{ departureTime: CYCLE_SECONDS }] }
+
+      return { ...route, stComboTimings: [{ departureTime: CYCLE_SECONDS }], stNodes: preview.stNodes }
     })
     state.previewRoute = null
   })
 
   const state: GameState = {
     ...network,
-    previewRoute: null,
-    trains: [],
-    confirmRouteChange,
-    deleteRoute,
-    generateRoute,
-    setPreviewRoute,
-    setTracks,
-    clearPendingStNodeChanges: () => {
-      pendingStationNodeIds = []
-    },
-    changePreviewRoute: (change) => {
-      pendingStationNodeIds.push(change.stNodeId)
-    },
     batchPreviewRouteUpdates: () => {
       const preview = state.previewRoute
       const added = pendingStationNodeIds
@@ -115,15 +100,29 @@ function createFixture() {
       if (preview) {
         state.previewRoute = { ...preview, stNodes: [...preview.stNodes, ...added] }
       }
+
       return Promise.resolve()
     },
+    changePreviewRoute: (change) => {
+      pendingStationNodeIds.push(change.stNodeId)
+    },
+    clearPendingStNodeChanges: () => {
+      pendingStationNodeIds = []
+    },
+    confirmRouteChange,
+    deleteRoute,
+    generateRoute,
+    previewRoute: null,
     setManualRouteOrdering: () => {},
+    setPreviewRoute,
     setRoutes: (routes) => {
       state.routes = routes
     },
+    setTracks,
     setTrains: (trains) => {
       state.trains = trains
     },
+    trains: [],
     updateRouteProperty: vi.fn(),
   }
 
@@ -142,7 +141,9 @@ function createFixture() {
     previewEditor,
     provisionService,
   )
+
   return {
+    builtRoute: () => findRoute(state.routes, ROUTE_ID),
     deleteRoute,
     generateRoute,
     guardEnd,
@@ -152,8 +153,11 @@ function createFixture() {
     setTracks,
     state,
     useCase,
-    builtRoute: () => findRoute(state.routes, ROUTE_ID),
   }
+}
+
+function crossover(id: string): Track {
+  return { coords: [[0, 0], [0, 1]], id, reversable: true, type: 'scissors-crossover' }
 }
 
 function stationNodeIdsOf(route: Route | undefined): string[] {
@@ -223,6 +227,7 @@ describe('CreateNewLineUseCase', () => {
     function refusingFixture(): ReturnType<typeof createFixture> {
       const fixture = createFixture()
       fixture.state.confirmRouteChange = vi.fn()
+
       return fixture
     }
 
@@ -256,7 +261,7 @@ describe('CreateNewLineUseCase', () => {
     it('numbers the new line after the highest one already built', async () => {
       const { builtRoute, state, useCase } = createFixture()
       const [existingNode] = state.stNodes ?? []
-      state.routes = [{ id: 'route-existing', bullet: '3', stNodes: [existingNode] }]
+      state.routes = [{ bullet: '3', id: 'route-existing', stNodes: [existingNode] }]
       await useCase.execute(['a', 'b', 'c'])
       expect(builtRoute()?.bullet).toBe('4')
     })
@@ -308,8 +313,8 @@ describe('CreateNewLineUseCase', () => {
       await useCase.execute(['a', 'b', 'c'])
       expect(setTracks).toHaveBeenCalledWith({
         newTracks: [...existing, crossover('start'), crossover('end')],
-        regenStations: false,
         regenRoutesWithTrackIDs: [],
+        regenStations: false,
       })
     })
 

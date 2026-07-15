@@ -14,6 +14,7 @@ function graphOf(links: [string, string][]): (stationId: string) => Iterable<str
     link(from, to)
     link(to, from)
   }
+
   return (stationId): Iterable<string> => adjacency.get(stationId) ?? new Set<string>()
 }
 
@@ -94,6 +95,7 @@ describe('BranchExplorer.leafPaths', () => {
     const seen: [null | string, string, string][] = []
     leafPaths([['root', 'a'], ['a', 'b']], 'root', [], (prev, current, next) => {
       seen.push([prev, current, next])
+
       return false
     })
     expect(seen).toEqual([[null, 'root', 'a'], ['root', 'a', 'b']])

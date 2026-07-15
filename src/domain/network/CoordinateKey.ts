@@ -29,5 +29,6 @@ export function detectCoordinateKey(state: GameState): CoordinateKeyFn {
       }
     }
   }
+
   return FORMATS[0]
 }

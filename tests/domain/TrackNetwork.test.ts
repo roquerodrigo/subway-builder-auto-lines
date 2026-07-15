@@ -295,7 +295,7 @@ describe('TrackNetwork.railBetween', () => {
 
 describe('TrackNetwork.railPath', () => {
   it('joins each hop end to end without doubling the shared stop', () => {
-    const { network, index } = networkOf(LINE)
+    const { index, network } = networkOf(LINE)
     const path = network.railPath(['a', 'b', 'c'])
     expect(path).toEqual([
       index.stationNodeById.get('a#1')?.center,
@@ -315,7 +315,7 @@ describe('TrackNetwork.railPath', () => {
   })
 
   it('falls back to a straight hop between stations with no rail', () => {
-    const { network, index } = networkOf({
+    const { index, network } = networkOf({
       links: [{ between: ['a', 'b'] }],
       stations: [{ at: point(0, 0), id: 'a' }, { at: point(1, 0), id: 'b' }, { at: point(9, 9), id: 'z' }],
     })
@@ -424,5 +424,6 @@ describe('TrackNetwork.bendsBack', () => {
 function trackless(): TrackNetwork {
   const state = buildNetwork(LINE)
   const bare = { ...state, tracks: [] }
+
   return new TrackNetwork(bare, StationIndex.build(bare))
 }

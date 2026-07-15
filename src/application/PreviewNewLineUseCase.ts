@@ -8,12 +8,12 @@ import { LineColorPalette } from '@/domain/newline/LineColorPalette'
 import { NewLinePlanner } from '@/domain/newline/NewLinePlanner'
 
 export interface NewLinePreview {
-  corridor: NewLineCorridor // base path + the forks the user can continue into
-  nameById: Record<string, string>
-  coordById: Record<string, Coordinate>
-  railPath: (stationIds: string[]) => Coordinate[]
   color: string // chosen here and passed to CreateNewLine, so preview == result
+  coordById: Record<string, Coordinate>
+  corridor: NewLineCorridor // base path + the forks the user can continue into
   groupSize: number
+  nameById: Record<string, string>
+  railPath: (stationIds: string[]) => Coordinate[]
 }
 
 // Computes the line that would be built from an orphan group WITHOUT touching the
@@ -37,6 +37,7 @@ export class PreviewNewLineUseCase {
       }
     }
     const usedColors = new Set((state.routes ?? []).map((route) => route.color ?? '').filter(Boolean))
+
     return {
       color: LineColorPalette.pick(usedColors, Math.random()),
       coordById,

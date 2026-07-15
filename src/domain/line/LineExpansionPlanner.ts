@@ -33,6 +33,7 @@ export class LineExpansionPlanner {
           map.set(neighbor, node)
         }
       }
+
       return map
     }
 
@@ -54,6 +55,7 @@ export class LineExpansionPlanner {
           map.set(neighbor, node)
         }
       }
+
       return map
     }
 
@@ -117,7 +119,7 @@ export class LineExpansionPlanner {
       }
 
       if (autoNames.length || fork) {
-        endpoints.push({ stationId, name: station.name, autoStationNodeIds, autoNames, autoStationIds, fork })
+        endpoints.push({ autoNames, autoStationIds, autoStationNodeIds, fork, name: station.name, stationId })
       }
     }
 
@@ -153,11 +155,12 @@ export class LineExpansionPlanner {
     }
 
     const leaf = branchPath[branchPath.length - 1]
+
     return {
-      stationId: leaf,
-      name: index.name(leaf),
-      stationIds: branchPath,
       applyStationNodeIds,
+      name: index.name(leaf),
+      stationId: leaf,
+      stationIds: branchPath,
     }
   }
 

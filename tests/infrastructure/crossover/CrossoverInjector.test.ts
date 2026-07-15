@@ -8,10 +8,10 @@ import type { FakeGameStore } from '../fakeGameStore'
 
 import { createFakeGameStore } from '../fakeGameStore'
 
-const EXISTING: Track = { id: 'track-1', coords: [[0, 0], [1, 1]] }
+const EXISTING: Track = { coords: [[0, 0], [1, 1]], id: 'track-1' }
 
 function makeDiagonal(id: string): Track {
-  return { id, coords: [[0, 0], [1, 1]], type: 'scissors-crossover', reversable: true, interactable: false }
+  return { coords: [[0, 0], [1, 1]], id, interactable: false, reversable: true, type: 'scissors-crossover' }
 }
 
 describe('CrossoverInjector', () => {
@@ -19,7 +19,7 @@ describe('CrossoverInjector', () => {
   let injector: CrossoverInjector
 
   beforeEach(() => {
-    fake = createFakeGameStore({ tracks: [EXISTING], setTracks: vi.fn() })
+    fake = createFakeGameStore({ setTracks: vi.fn(), tracks: [EXISTING] })
     injector = new CrossoverInjector(fake.store)
   })
 
@@ -39,8 +39,8 @@ describe('CrossoverInjector', () => {
 
     expect(fake.state.setTracks).toHaveBeenCalledWith({
       newTracks: [EXISTING, makeDiagonal('diag-1')],
-      regenStations: false,
       regenRoutesWithTrackIDs: [],
+      regenStations: false,
     })
   })
 

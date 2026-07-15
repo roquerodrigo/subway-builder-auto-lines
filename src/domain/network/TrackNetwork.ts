@@ -31,6 +31,7 @@ export class TrackNetwork {
   static distance(a: Coordinate, b: Coordinate): number {
     const dx = (a[0] - b[0]) * METERS_PER_DEGREE_LONGITUDE
     const dy = (a[1] - b[1]) * METERS_PER_DEGREE_LATITUDE
+
     return Math.sqrt(dx * dx + dy * dy)
   }
 
@@ -64,6 +65,7 @@ export class TrackNetwork {
         }
       }
     }
+
     return Array.from(new Set(found))
   }
 
@@ -76,6 +78,7 @@ export class TrackNetwork {
     if (!base || !fork) {
       return false
     }
+
     return base[0] * fork[0] + base[1] * fork[1] > 0
   }
 
@@ -88,6 +91,7 @@ export class TrackNetwork {
         result.add(neighbor)
       }
     }
+
     return result
   }
 
@@ -103,6 +107,7 @@ export class TrackNetwork {
       length += TrackNetwork.distance(rail[i], rail[i + 1])
     }
     const direct = TrackNetwork.distance(rail[0], rail[rail.length - 1])
+
     return direct > 0 && length > direct * MAX_DETOUR_RATIO
   }
 
@@ -120,6 +125,7 @@ export class TrackNetwork {
         }
       }
     }
+
     return map
   }
 
@@ -131,6 +137,7 @@ export class TrackNetwork {
         result.add(neighbor)
       }
     }
+
     return result
   }
 
@@ -152,6 +159,7 @@ export class TrackNetwork {
     const dx = (far[0] - origin[0]) * METERS_PER_DEGREE_LONGITUDE
     const dy = (far[1] - origin[1]) * METERS_PER_DEGREE_LATITUDE
     const magnitude = Math.hypot(dx, dy)
+
     return magnitude > 0 ? [dx / magnitude, dy / magnitude] : null
   }
 
@@ -206,6 +214,7 @@ export class TrackNetwork {
     for (let key: null | string = reached; key !== null; key = parent.get(key) ?? null) {
       keys.unshift(key)
     }
+
     return this.assembleGeometry(keys)
   }
 
@@ -224,6 +233,7 @@ export class TrackNetwork {
         appendSegment(polyline, segment)
       }
     }
+
     return polyline
   }
 
@@ -231,6 +241,7 @@ export class TrackNetwork {
     if (!this.stationKeys) {
       this.stationKeys = new Set(this.index.stationNodeByCoord.keys())
     }
+
     return this.stationKeys
   }
 
@@ -243,6 +254,7 @@ export class TrackNetwork {
         appendSegment(polyline, segment)
       }
     }
+
     return polyline
   }
 
@@ -264,6 +276,7 @@ export class TrackNetwork {
       map.set(to + PAIR_SEPARATOR + from, [...coords].reverse())
     }
     this.segmentByPair = map
+
     return map
   }
 
@@ -275,6 +288,7 @@ export class TrackNetwork {
         keys.add(this.index.coordKey(center))
       }
     }
+
     return keys
   }
 }

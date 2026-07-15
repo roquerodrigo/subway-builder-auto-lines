@@ -17,9 +17,10 @@ export class CrossoverInjector {
     }
     state.setTracks({
       newTracks: state.tracks.concat(real),
-      regenStations: false,
       regenRoutesWithTrackIDs: [],
+      regenStations: false,
     })
+
     return real.length
   }
 }

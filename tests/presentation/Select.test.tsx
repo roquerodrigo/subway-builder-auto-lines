@@ -5,8 +5,8 @@ import { h } from '@/infrastructure/ui/react'
 import { Select } from '@/presentation/components/Select'
 
 const OPTIONS = [
-  { value: 'r1', label: 'Line 1' },
-  { value: 'r2', label: 'Line 2' },
+  { label: 'Line 1', value: 'r1' },
+  { label: 'Line 2', value: 'r2' },
 ]
 
 describe('Select', () => {
@@ -21,7 +21,7 @@ describe('Select', () => {
   })
 
   it('shows the empty option while nothing is chosen yet', () => {
-    const options = [{ value: '', label: '— Pick one —' }, ...OPTIONS]
+    const options = [{ label: '— Pick one —', value: '' }, ...OPTIONS]
     render(<Select onChange={vi.fn()} options={options} value={null} />)
     expect(screen.getByRole<HTMLSelectElement>('combobox').value).toBe('')
   })

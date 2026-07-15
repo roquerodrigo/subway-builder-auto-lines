@@ -10,36 +10,36 @@ import { TrackNetwork } from '@/domain/network/TrackNetwork'
 // The two trackGraph key formats the game has shipped (see domain/network/CoordinateKey).
 export type CoordinateKeyFormat = 'dashed' | 'prefixed'
 
-export interface StationSpec {
-  id: string
-  at: Coordinate
-  name?: string
-  routeIds?: string[]
-}
-
 export interface LinkSpec {
   between: [string, string]
+  // Plain (non-station) graph vertices the rails run through, so one hop becomes
+  // several graph edges — the game's track-level junctions.
+  junctions?: Coordinate[]
   // Track-shape vertices: they bend the rail geometry without becoming graph
   // vertices, so the hop stays a single graph edge — how a curve or a detour is
   // modelled. Ignored when `junctions` is given.
   shape?: Coordinate[]
-  // Plain (non-station) graph vertices the rails run through, so one hop becomes
-  // several graph edges — the game's track-level junctions.
-  junctions?: Coordinate[]
-}
-
-export interface NetworkSpec {
-  stations: StationSpec[]
-  links?: LinkSpec[]
-  // Stations whose two platforms are joined by a turnaround edge.
-  crossovers?: string[]
-  keyFormat?: CoordinateKeyFormat
 }
 
 export interface NetworkFixture {
   index: StationIndex
   network: TrackNetwork
   state: GameState
+}
+
+export interface NetworkSpec {
+  // Stations whose two platforms are joined by a turnaround edge.
+  crossovers?: string[]
+  keyFormat?: CoordinateKeyFormat
+  links?: LinkSpec[]
+  stations: StationSpec[]
+}
+
+export interface StationSpec {
+  at: Coordinate
+  id: string
+  name?: string
+  routeIds?: string[]
 }
 
 // Half the gap between a station's two platform nodes, in degrees (~2 m) — small
@@ -50,12 +50,6 @@ const PLATFORM_OFFSET_DEGREES = 0.00002
 // One grid unit, in degrees: ~1.0 km east / ~1.1 km north. Far past the 120 m the
 // direction sampler needs, so every bearing in a fixture is unambiguous.
 const GRID_UNIT_DEGREES = 0.01
-
-export function coordinateKey(format: CoordinateKeyFormat = 'prefixed'): (coord: Coordinate) => string {
-  return format === 'prefixed' ?
-      (coord): string => 'S' + coord[0] + coord[1] :
-      (coord): string => coord[0] + '-' + coord[1]
-}
 
 // A GameState whose stations each own two platform nodes ('<id>#1' / '<id>#2'),
 // joined by one track per platform side, with a trackGraph in the game's own key
@@ -73,12 +67,12 @@ export function buildNetwork(spec: NetworkSpec): GameState {
     ]
     platformsByStation.set(station.id, platforms)
     const nodeIds = [station.id + '#1', station.id + '#2']
-    nodeIds.forEach((id, side) => stationNodes.push({ id, center: platforms[side], trackIds: [] }))
+    nodeIds.forEach((id, side) => stationNodes.push({ center: platforms[side], id, trackIds: [] }))
     stations.push({
       id: station.id,
       name: station.name ?? station.id.toUpperCase(),
-      stNodeIds: nodeIds,
       routeIds: station.routeIds ?? [],
+      stNodeIds: nodeIds,
     })
   }
 
@@ -94,7 +88,7 @@ export function buildNetwork(spec: NetworkSpec): GameState {
     }
     built.add(from + '>' + to)
     built.add(to + '>' + from)
-    tracks.push({ id: 'track-' + tracks.length, coords, reversable: true })
+    tracks.push({ coords, id: 'track-' + tracks.length, reversable: true })
     for (const [tail, head] of [[from, to], [to, from]]) {
       const edges = graph.get(tail) ?? []
       edges.push({ coordsString: head })
@@ -107,6 +101,7 @@ export function buildNetwork(spec: NetworkSpec): GameState {
     if (!found) {
       throw new Error('the spec links an unknown station: ' + stationId)
     }
+
     return found
   }
 
@@ -129,19 +124,26 @@ export function buildNetwork(spec: NetworkSpec): GameState {
   }
 
   return {
+    money: 0,
+    ownedTrainCount: 30,
+    routes: [],
     stations,
     stNodes: stationNodes,
-    tracks,
     trackGraph: graph,
-    routes: [],
-    ownedTrainCount: 30,
-    money: 0,
+    tracks,
   }
+}
+
+export function coordinateKey(format: CoordinateKeyFormat = 'prefixed'): (coord: Coordinate) => string {
+  return format === 'prefixed' ?
+      (coord): string => 'S' + coord[0] + coord[1] :
+      (coord): string => coord[0] + '-' + coord[1]
 }
 
 export function networkOf(spec: NetworkSpec): NetworkFixture {
   const state = buildNetwork(spec)
   const index = StationIndex.build(state)
+
   return { index, network: new TrackNetwork(state, index), state }
 }
 

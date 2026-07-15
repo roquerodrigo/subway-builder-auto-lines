@@ -46,6 +46,7 @@ export class OrphanGroupFinder {
     }
 
     groups.sort((a, b) => b.stationIds.length - a.stationIds.length)
+
     return groups
   }
 
@@ -60,6 +61,7 @@ export class OrphanGroupFinder {
     if (path.length < 2) {
       return null
     }
+
     return [index.name(path[0]), index.name(path[path.length - 1])]
   }
 }

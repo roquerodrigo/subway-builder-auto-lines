@@ -32,6 +32,7 @@ export class CarInventoryPolicy {
       low += (schedule.lowDemand || 0) * cars
       veryLow += ((schedule.veryLowDemand ?? schedule.lowDemand) || 0) * cars
     }
+
     return Math.max(high, mid, low, veryLow)
   }
 

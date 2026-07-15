@@ -10,6 +10,7 @@ function wholePalette(): string[] {
   for (let color = LineColorPalette.next(first); color !== first; color = LineColorPalette.next(color)) {
     colors.push(color)
   }
+
   return colors
 }
 

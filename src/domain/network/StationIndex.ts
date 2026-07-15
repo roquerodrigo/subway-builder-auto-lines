@@ -49,6 +49,7 @@ export class StationIndex {
     }
     const lng = centers.reduce((sum, c) => sum + c[0], 0) / centers.length
     const lat = centers.reduce((sum, c) => sum + c[1], 0) / centers.length
+
     return [lng, lat]
   }
 

@@ -6,7 +6,7 @@ import type { TrainTypeStats } from '@/shared/game/TrainType'
 import { TrainTypeCatalog } from '@/infrastructure/game/TrainTypeCatalog'
 import { FALLBACK_TRAIN_TYPE_STATS } from '@/shared/game/constants'
 
-const LIGHT_RAIL_STATS: TrainTypeStats = { carsPerCarSet: 2, maxCars: 6, carCost: 900_000 }
+const LIGHT_RAIL_STATS: TrainTypeStats = { carCost: 900_000, carsPerCarSet: 2, maxCars: 6 }
 
 function makeCatalog(api: SubwayBuilderApi): TrainTypeCatalog {
   return new TrainTypeCatalog(api)

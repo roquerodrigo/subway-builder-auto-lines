@@ -16,8 +16,8 @@ import type { FakeGameStore } from '../fakeGameStore'
 
 import { createFakeGameStore } from '../fakeGameStore'
 
-const HEAVY_METRO_STATS: TrainTypeStats = { carsPerCarSet: 5, maxCars: 15, carCost: 2_700_000 }
-const SCHEDULE: TrainSchedule = { highDemand: 4, mediumDemand: 2, lowDemand: 1 }
+const HEAVY_METRO_STATS: TrainTypeStats = { carCost: 2_700_000, carsPerCarSet: 5, maxCars: 15 }
+const SCHEDULE: TrainSchedule = { highDemand: 4, lowDemand: 1, mediumDemand: 2 }
 const HOUR = 3600
 const MORNING_RUSH = 8 * HOUR
 const MIDDAY = 12 * HOUR
@@ -28,7 +28,7 @@ function makeRoute(overrides: Partial<Route> = {}): Route {
 }
 
 function nodes(count: number): StationNode[] {
-  return Array.from({ length: count }, (_, index) => ({ id: `node-${index}`, center: [index, 0] }))
+  return Array.from({ length: count }, (_, index) => ({ center: [index, 0], id: `node-${index}` }))
 }
 
 describe('FleetProvisioner', () => {
@@ -36,6 +36,7 @@ describe('FleetProvisioner', () => {
 
   function makeProvisioner(fake: FakeGameStore): FleetProvisioner {
     const api: SubwayBuilderApi = { trains: { getTrainType: () => ({ stats }) } }
+
     return new FleetProvisioner(fake.store, new TrainTypeCatalog(api))
   }
 
@@ -48,11 +49,11 @@ describe('FleetProvisioner', () => {
 
     beforeEach(() => {
       fake = createFakeGameStore({
+        buyTrains: vi.fn(),
         money: 1_000,
         ownedCarsByType: { 'heavy-metro': 30 },
         ownedTrainCount: 30,
         routes: [makeRoute()],
-        buyTrains: vi.fn(),
         setMoney: vi.fn((amount: number): void => {
           fake.state.money = amount
         }),
@@ -127,7 +128,7 @@ describe('FleetProvisioner', () => {
     })
 
     it('falls back to the default car set, length and price when the type reports none', () => {
-      stats = { carsPerCarSet: 0, maxCars: 0, carCost: 0 }
+      stats = { carCost: 0, carsPerCarSet: 0, maxCars: 0 }
       fake.state.ownedCarsByType = { 'heavy-metro': 0 }
 
       makeProvisioner(fake).ensureCarInventory('route-1')
@@ -141,7 +142,7 @@ describe('FleetProvisioner', () => {
     it('counts the cars every other line of the type already claims at peak', () => {
       fake.state.routes = [
         makeRoute(),
-        { id: 'route-2', stNodes: nodes(2), trainSchedule: { highDemand: 2, mediumDemand: 1, lowDemand: 1 }, carsPerTrain: 10 },
+        { carsPerTrain: 10, id: 'route-2', stNodes: nodes(2), trainSchedule: { highDemand: 2, lowDemand: 1, mediumDemand: 1 } },
       ]
 
       makeProvisioner(fake).ensureCarInventory('route-1')
@@ -225,12 +226,12 @@ describe('FleetProvisioner', () => {
 
     beforeEach(() => {
       fake = createFakeGameStore({
+        generateTrain: vi.fn(),
         ownedTrainCount: 30,
         routes: [makeRoute()],
+        spawnTrainAtStation: vi.fn(),
         timeConfig: { elapsedSeconds: MORNING_RUSH },
         trains: [],
-        spawnTrainAtStation: vi.fn(),
-        generateTrain: vi.fn(),
       })
     })
 

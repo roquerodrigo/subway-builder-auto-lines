@@ -5,6 +5,7 @@
 export function asRenderedColor(color: string): string {
   const probe = document.createElement('div')
   probe.style.color = color
+
   return probe.style.color
 }
 

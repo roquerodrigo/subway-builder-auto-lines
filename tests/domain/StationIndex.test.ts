@@ -88,8 +88,8 @@ describe('StationIndex.coordinate', () => {
     const state: GameState = {
       money: 0,
       ownedTrainCount: 0,
-      stNodes: [{ center: [4, 8], id: 'a#1' }],
       stations: [{ id: 'a', name: 'Sé', stNodeIds: ['a#1', 'gone#2'] }],
+      stNodes: [{ center: [4, 8], id: 'a#1' }],
       tracks: [],
     }
     expect(StationIndex.build(state).coordinate('a')).toEqual([4, 8])

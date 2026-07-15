@@ -51,6 +51,7 @@ describe('PreviewMapOverlay', () => {
     if (!data) {
       throw new Error('the overlay added no source')
     }
+
     return data.features
   }
 
@@ -67,6 +68,7 @@ describe('PreviewMapOverlay', () => {
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback): number => {
       const handle = nextFrameHandle++
       frames.set(handle, callback)
+
       return handle
     })
     vi.stubGlobal('cancelAnimationFrame', cancelFrame)

@@ -14,7 +14,7 @@ const LIFECYCLE_HOOKS = ['onGameInit', 'onCityLoad', 'onMapReady']
 export class FloatingPanelRegistrar {
   constructor(
     private readonly api: SubwayBuilderApi,
-    private readonly render: (props: { width?: number, height?: number }) => unknown,
+    private readonly render: (props: { height?: number, width?: number }) => unknown,
   ) {}
 
   installLifecycleHooks(): void {
@@ -38,6 +38,7 @@ export class FloatingPanelRegistrar {
     const ui = this.api.ui
     if (!ui || typeof ui.addFloatingPanel !== 'function' || !isReactAvailable()) {
       logger.error('api.ui.addFloatingPanel / React unavailable — mod disabled.')
+
       return
     }
     try {
@@ -46,15 +47,15 @@ export class FloatingPanelRegistrar {
       /* first registration — nothing to unregister */
     }
     ui.addFloatingPanel({
-      id: PANEL_ID,
-      icon: 'Waypoints',
-      tooltip: 'Auto Lines',
-      title: 'Auto Lines',
-      defaultWidth: 475,
       defaultHeight: 650,
-      minWidth: 320,
+      defaultWidth: 475,
+      icon: 'Waypoints',
+      id: PANEL_ID,
       minHeight: 380,
+      minWidth: 320,
       render: this.render,
+      title: 'Auto Lines',
+      tooltip: 'Auto Lines',
     })
   }
 }

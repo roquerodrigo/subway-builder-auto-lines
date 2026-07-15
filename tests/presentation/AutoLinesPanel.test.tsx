@@ -25,16 +25,6 @@ function actionButton(): HTMLButtonElement {
   return document.querySelector('button.w-full') as HTMLButtonElement
 }
 
-function pickers(): HTMLSelectElement[] {
-  return screen.queryAllByRole<HTMLSelectElement>('combobox')
-}
-
-// The tab bar comes first in the DOM, so its "Extend" precedes the action button
-// of the same name.
-function tab(name: string): HTMLElement {
-  return screen.getAllByRole('button', { name })[0]
-}
-
 function createHarness(spec: CitySpec = CITY) {
   let city = spec
   let state = buildCity(city)
@@ -70,6 +60,7 @@ function createHarness(spec: CitySpec = CITY) {
   }
   const AutoLinesPanel = createAutoLinesPanel(dependencies as unknown as PanelDependencies)
   const view = render(<AutoLinesPanel />)
+
   return {
     createNewLine,
     discardPreview,
@@ -77,29 +68,40 @@ function createHarness(spec: CitySpec = CITY) {
     maintenance,
     previewNewLine,
     previewOverlay,
-    showNotification,
-    view,
     // Stands in for the player editing the map with the panel still open: the next
     // read of the store and of the route list sees the new city.
     rebuildCity: (next: CitySpec): void => {
       city = next
       state = buildCity(next)
     },
+    showNotification,
     // Reshapes what the next preview reports, so a test can drive a corridor that
     // forks (or one that cannot form a line) without a bespoke city.
     useCorridor: (next: NewLineCorridor): void => {
       corridor = next
     },
+    view,
   }
+}
+
+function lastOverlayColor(previewOverlay: { show: ReturnType<typeof vi.fn> }): unknown {
+  const calls = previewOverlay.show.mock.calls
+
+  return calls[calls.length - 1][2]
 }
 
 function openNewLineTab(): void {
   fireEvent.click(tab('New line'))
 }
 
-function lastOverlayColor(previewOverlay: { show: ReturnType<typeof vi.fn> }): unknown {
-  const calls = previewOverlay.show.mock.calls
-  return calls[calls.length - 1][2]
+function pickers(): HTMLSelectElement[] {
+  return screen.queryAllByRole<HTMLSelectElement>('combobox')
+}
+
+// The tab bar comes first in the DOM, so its "Extend" precedes the action button
+// of the same name.
+function tab(name: string): HTMLElement {
+  return screen.getAllByRole('button', { name })[0]
 }
 
 describe('AutoLinesPanel tabs', () => {

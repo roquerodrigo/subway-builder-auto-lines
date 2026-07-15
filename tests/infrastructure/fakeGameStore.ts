@@ -26,5 +26,6 @@ export function createFakeGameStore(initial: Partial<GameState> = {}): FakeGameS
     ...initial,
   }
   const getState = vi.fn((): GameState => state)
+
   return { getState, state, store: new GameStore({ getState }) }
 }

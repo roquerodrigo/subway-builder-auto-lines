@@ -8,9 +8,16 @@ import { LineExpansionPlanner } from '@/domain/line/LineExpansionPlanner'
 
 import { buildNetwork, type NetworkSpec, point } from './support/network'
 
+function planOver(spec: NetworkSpec, stationNodeIds: string[]): ExpansionPlan {
+  const state = buildNetwork(spec)
+
+  return LineExpansionPlanner.plan(state, routeOver(state, stationNodeIds))
+}
+
 // A line drawn over real platform nodes of `state`, the way the game stores it.
 function routeOver(state: GameState, stationNodeIds: string[]): Route {
   const byId = new Map((state.stNodes ?? []).map((node) => [node.id, node] as const))
+
   return {
     id: 'route-1',
     stNodes: stationNodeIds.map((id) => {
@@ -18,14 +25,10 @@ function routeOver(state: GameState, stationNodeIds: string[]): Route {
       if (!node) {
         throw new Error('the fixture has no station node ' + id)
       }
+
       return node
     }),
   }
-}
-
-function planOver(spec: NetworkSpec, stationNodeIds: string[]): ExpansionPlan {
-  const state = buildNetwork(spec)
-  return LineExpansionPlanner.plan(state, routeOver(state, stationNodeIds))
 }
 
 const STRAIGHT: NetworkSpec = {

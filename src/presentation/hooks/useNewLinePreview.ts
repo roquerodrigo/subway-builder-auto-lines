@@ -23,6 +23,7 @@ export function useNewLinePreview(
     if (!group) {
       return null
     }
+
     return dependencies.previewNewLine.execute(group.stationIds)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, selection, refreshKey])

@@ -9,31 +9,31 @@ import { StationList } from '@/presentation/components/StationList'
 import { groupLabel } from '@/presentation/labels'
 
 export interface NewLineTabProps {
+  choices: NewLineForkChoices
+  color?: string
+  creating: boolean
+  forks: NewLineFork[]
   groups: OrphanGroup[]
-  selection: null | string
   names: string[]
   ok: boolean
-  forks: NewLineFork[]
-  choices: NewLineForkChoices
-  creating: boolean
-  color?: string
-  onSelectGroup: (key: string) => void
   onChoose: (atStationId: string, branch: NewLineBranch | null) => void
   onCycleColor: () => void
+  onSelectGroup: (key: string) => void
+  selection: null | string
 }
 
 export function NewLineTab({
+  choices,
+  color,
+  creating,
+  forks,
   groups,
-  selection,
   names,
   ok,
-  forks,
-  choices,
-  creating,
-  color,
-  onSelectGroup,
   onChoose,
   onCycleColor,
+  onSelectGroup,
+  selection,
 }: NewLineTabProps): JSX.Element {
   if (!groups.length) {
     return <div className="text-xs text-muted-foreground">No stations without a line.</div>
@@ -43,7 +43,7 @@ export function NewLineTab({
     <div className="flex h-full flex-col gap-3">
       <Select
         onChange={onSelectGroup}
-        options={groups.map((group) => ({ value: group.key, label: groupLabel(group) }))}
+        options={groups.map((group) => ({ label: groupLabel(group), value: group.key }))}
         value={selection}
       />
       {creating ?
@@ -57,14 +57,15 @@ export function NewLineTab({
               <Fragment>
                 {forks.map((fork) => {
                   const chosen = choices[fork.atStationId]
+
                   return (
                     <BranchSelect
                       key={fork.atStationId}
                       label={'Continue from ' + fork.atName + ' to:'}
                       onChange={(v) =>
                         onChoose(fork.atStationId, v === '' ? null : fork.options.find((o) => o.key === v) ?? null)}
-                      options={[{ value: '', label: '— Don\'t continue —' }].concat(
-                        fork.options.map((option) => ({ value: option.key, label: '→ ' + option.name })),
+                      options={[{ label: '— Don\'t continue —', value: '' }].concat(
+                        fork.options.map((option) => ({ label: '→ ' + option.name, value: option.key })),
                       )}
                       value={chosen ? chosen.key : ''}
                     />
@@ -79,11 +80,11 @@ export function NewLineTab({
                   >
                     <span
                       style={{
-                        width: '14px',
-                        height: '14px',
-                        borderRadius: '3px',
                         background: color,
                         border: '1px solid rgba(255,255,255,.25)',
+                        borderRadius: '3px',
+                        height: '14px',
+                        width: '14px',
                       }}
                     />
                     Change color
@@ -92,7 +93,7 @@ export function NewLineTab({
                     color={color}
                     flatRows
                     hideNewTag
-                    items={names.map((name) => ({ name, isNew: true }))}
+                    items={names.map((name) => ({ isNew: true, name }))}
                     route={null}
                   />
                   <div className="text-xs text-muted-foreground">

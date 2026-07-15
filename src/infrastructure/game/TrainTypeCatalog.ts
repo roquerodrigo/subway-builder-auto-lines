@@ -16,6 +16,7 @@ export class TrainTypeCatalog {
     } catch {
       /* fall through to defaults */
     }
+
     return FALLBACK_TRAIN_TYPE_STATS
   }
 }

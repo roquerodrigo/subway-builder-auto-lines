@@ -8,6 +8,7 @@ export class BulletSequence {
       .filter((route) => route.tempParentId == null)
       .map((route) => parseInt(route.bullet ?? '', 10))
       .filter((n) => !Number.isNaN(n))
+
     return String((numbers.length ? Math.max(...numbers) : 0) + 1)
   }
 }

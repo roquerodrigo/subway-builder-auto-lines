@@ -4,20 +4,20 @@ import { h } from '@/infrastructure/ui/react'
 import { BranchSelect } from '@/presentation/components/BranchSelect'
 
 export interface ForkSelectorProps {
-  endpoint: Endpoint
   chosen: ForkOption | null | undefined
+  endpoint: Endpoint
   onChoose: (option: ForkOption | null) => void
 }
 
 // The branch picker shown for an endpoint that ends at a fork.
-export function ForkSelector({ endpoint, chosen, onChoose }: ForkSelectorProps): JSX.Element | null {
+export function ForkSelector({ chosen, endpoint, onChoose }: ForkSelectorProps): JSX.Element | null {
   const fork = endpoint.fork
   if (!fork) {
     return null
   }
 
-  const options = [{ value: '', label: '— Don\'t extend —' }].concat(
-    fork.options.map((option, i) => ({ value: String(i), label: '→ ' + option.name })),
+  const options = [{ label: '— Don\'t extend —', value: '' }].concat(
+    fork.options.map((option, i) => ({ label: '→ ' + option.name, value: String(i) })),
   )
 
   return (

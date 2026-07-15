@@ -14,23 +14,24 @@ import { ExtendTab } from '@/presentation/view/ExtendTab'
 
 import { buildCity, CITY, LINE_ONE, LINE_TWO } from './support/cityFixture'
 
+interface TabOptions {
+  choices?: ForkChoices
+  planData?: ExtendPlanData | null
+  routes?: Route[]
+  status?: string
+}
+
 function planFor(route: Route): ExtendPlanData {
   const state = buildCity(CITY)
   const plan = LineExpansionPlanner.plan(state, route)
   const network = new TrackNetwork(state, StationIndex.build(state))
+
   return {
     order: Corridor.order(network, plan.lineStationIds),
     plan,
     railPath: (stationIds) => network.railPath(stationIds),
     route,
   }
-}
-
-interface TabOptions {
-  choices?: ForkChoices
-  planData?: ExtendPlanData | null
-  routes?: Route[]
-  status?: string
 }
 
 function renderTab(options: TabOptions = {}) {
@@ -47,6 +48,7 @@ function renderTab(options: TabOptions = {}) {
       status={options.status ?? ''}
     />,
   )
+
   return { onChoose, onSelectRoute, view }
 }
 

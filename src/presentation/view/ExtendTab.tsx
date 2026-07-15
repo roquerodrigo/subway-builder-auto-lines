@@ -9,23 +9,23 @@ import { buildDisplay, StationList } from '@/presentation/components/StationList
 import { routeLabel } from '@/presentation/labels'
 
 export interface ExtendTabProps {
+  choices: ForkChoices
+  onChoose: (stationId: string, option: ForkOption | null) => void
+  onSelectRoute: (id: string) => void
+  planData: ExtendPlanData | null
   routes: Route[]
   selection: null | string
-  planData: ExtendPlanData | null
-  choices: ForkChoices
   status: string
-  onSelectRoute: (id: string) => void
-  onChoose: (stationId: string, option: ForkOption | null) => void
 }
 
 export function ExtendTab({
+  choices,
+  onChoose,
+  onSelectRoute,
+  planData,
   routes,
   selection,
-  planData,
-  choices,
   status,
-  onSelectRoute,
-  onChoose,
 }: ExtendTabProps): JSX.Element {
   if (!routes.length) {
     return <div className="text-xs text-muted-foreground">No lines in this city.</div>
@@ -37,7 +37,7 @@ export function ExtendTab({
     <Fragment>
       <Select
         onChange={onSelectRoute}
-        options={routes.map((route) => ({ value: route.id, label: routeLabel(route) }))}
+        options={routes.map((route) => ({ label: routeLabel(route), value: route.id }))}
         value={selection}
       />
       {planData ?

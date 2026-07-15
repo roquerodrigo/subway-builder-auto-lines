@@ -87,12 +87,12 @@ const DEEP_FORK_IDS = ['a', 'b', 'c', 'd', 'd2', 'e']
 
 const FORKED_IDS = ['b', 'x', 'y', 'c', 'f', 'g', 'd', 'e']
 
-function corridorOf(fixture: NetworkFixture, stationIds: string[]): NewLineCorridor {
-  return NewLinePlanner.corridor(fixture.network, fixture.index, stationIds)
-}
-
 function branch(overrides: Partial<NewLineBranch> = {}): NewLineBranch {
   return { key: 'z', name: 'Z', stationIds: ['z'], ...overrides }
+}
+
+function corridorOf(fixture: NetworkFixture, stationIds: string[]): NewLineCorridor {
+  return NewLinePlanner.corridor(fixture.network, fixture.index, stationIds)
 }
 
 describe('NewLinePlanner.addStationNodeIds', () => {

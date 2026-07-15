@@ -13,10 +13,11 @@ export class ServiceSchedule {
   static forCycleSeconds(cycleSeconds: number): TrainSchedule {
     const countForHeadway = (headwaySeconds: number): number =>
       Math.max(1, Math.round(cycleSeconds / headwaySeconds))
+
     return {
       highDemand: countForHeadway(PEAK_HEADWAY_SECONDS),
-      mediumDemand: countForHeadway(MIDDAY_HEADWAY_SECONDS),
       lowDemand: countForHeadway(OFF_PEAK_HEADWAY_SECONDS),
+      mediumDemand: countForHeadway(MIDDAY_HEADWAY_SECONDS),
       veryLowDemand: countForHeadway(NIGHT_HEADWAY_SECONDS),
     }
   }

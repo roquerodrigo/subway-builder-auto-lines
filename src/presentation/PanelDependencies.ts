@@ -10,12 +10,12 @@ import type { SubwayBuilderApi } from '@/shared/game/SubwayBuilderApi'
 // Everything the panel needs, injected by the composition root (main.tsx) so the
 // presentation layer never reaches into window/store directly.
 export interface PanelDependencies {
-  store: GameStore
   api: SubwayBuilderApi
-  maintenance: RouteMaintenance
-  previewOverlay: PreviewMapOverlay
-  extendLine: ExtendLineUseCase
-  previewNewLine: PreviewNewLineUseCase
   createNewLine: CreateNewLineUseCase
   discardPreview: DiscardNewLinePreviewUseCase
+  extendLine: ExtendLineUseCase
+  maintenance: RouteMaintenance
+  previewNewLine: PreviewNewLineUseCase
+  previewOverlay: PreviewMapOverlay
+  store: GameStore
 }

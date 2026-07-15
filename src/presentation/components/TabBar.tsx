@@ -9,6 +9,7 @@ export interface TabBarProps {
 export function TabBar({ mode, onSelect }: TabBarProps): JSX.Element {
   const tab = (label: string, value: PanelMode): JSX.Element => {
     const active = mode === value
+
     return (
       <button
         className={

@@ -5,17 +5,17 @@ import type { Station } from '@/shared/game/Station'
 import type { StationNode } from '@/shared/game/StationNode'
 import type { Track, TrackGraphEdge } from '@/shared/game/Track'
 
-export interface StationSpec {
-  id: string
-  name: string
-  center: Coordinate
-  routeIds?: string[]
-}
-
 export interface CitySpec {
-  stations: StationSpec[]
   links: [string, string][]
   routes?: Route[]
+  stations: StationSpec[]
+}
+
+export interface StationSpec {
+  center: Coordinate
+  id: string
+  name: string
+  routeIds?: string[]
 }
 
 // How far each of a station's two platforms sits from its center, in degrees of
@@ -63,6 +63,7 @@ export function buildCity(spec: CitySpec): GameState {
     if (!platforms) {
       throw new Error('Unknown station in link: ' + stationId)
     }
+
     return platforms[Math.min(taken, 1)]
   }
 
@@ -110,6 +111,7 @@ export function centerOf(spec: CitySpec, stationId: string): Coordinate {
   if (!station) {
     throw new Error('Unknown station: ' + stationId)
   }
+
   return station.center
 }
 

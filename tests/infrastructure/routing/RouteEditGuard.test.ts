@@ -12,15 +12,6 @@ interface FiberNode {
   return?: FiberNode | null
 }
 
-// The mod's own toolbar button, the descendant of the UiProvider the guard walks
-// up from. The game renders it as a <div title="Auto Lines">, not a <button>.
-function mountButton(): HTMLElement {
-  const button = document.createElement('div')
-  button.setAttribute('title', 'Auto Lines')
-  document.body.appendChild(button)
-  return button
-}
-
 function attachFiber(element: Element, fiber: FiberNode): void {
   Object.assign(element, { [FIBER_KEY]: fiber })
 }
@@ -32,7 +23,18 @@ function chainTo(provider: FiberNode, depth: number): FiberNode {
   for (let step = 0; step < depth; step++) {
     leaf = { return: leaf }
   }
+
   return leaf
+}
+
+// The mod's own toolbar button, the descendant of the UiProvider the guard walks
+// up from. The game renders it as a <div title="Auto Lines">, not a <button>.
+function mountButton(): HTMLElement {
+  const button = document.createElement('div')
+  button.setAttribute('title', 'Auto Lines')
+  document.body.appendChild(button)
+
+  return button
 }
 
 describe('RouteEditGuard', () => {

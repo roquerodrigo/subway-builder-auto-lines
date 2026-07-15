@@ -15,6 +15,7 @@ function adjacencyOf(links: [string, string][]): Map<string, Set<string>> {
     link(from, to)
     link(to, from)
   }
+
   return adjacency
 }
 

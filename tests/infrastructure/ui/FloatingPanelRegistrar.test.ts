@@ -40,13 +40,13 @@ describe('FloatingPanelRegistrar', () => {
     render = vi.fn()
     ui = { addFloatingPanel: vi.fn(), unregisterComponent: vi.fn() }
     api = {
-      ui,
       hooks: Object.fromEntries(LIFECYCLE_HOOKS.map((name) => [
         name,
         vi.fn((callback: () => void): void => {
           hookCallbacks.set(name, callback)
         }),
       ])),
+      ui,
     }
   })
 

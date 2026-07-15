@@ -12,16 +12,20 @@ import { buildNetwork, point } from '../domain/support/network'
 const FIRST_PALETTE_COLOR = '#d70000'
 const SECOND_PALETTE_COLOR = '#028800'
 
+function coloredRoute(color: string | undefined): Route {
+  return { color, id: 'route-1', stNodes: [] }
+}
+
 // A straight three-station corridor with a turnaround at each end.
 function corridorNetwork(): GameState {
   return buildNetwork({
-    stations: [
-      { id: 'a', at: point(0, 0), name: 'Alpha' },
-      { id: 'b', at: point(1, 0), name: 'Bravo' },
-      { id: 'c', at: point(2, 0), name: 'Charlie' },
-    ],
-    links: [{ between: ['a', 'b'] }, { between: ['b', 'c'] }],
     crossovers: ['a', 'c'],
+    links: [{ between: ['a', 'b'] }, { between: ['b', 'c'] }],
+    stations: [
+      { at: point(0, 0), id: 'a', name: 'Alpha' },
+      { at: point(1, 0), id: 'b', name: 'Bravo' },
+      { at: point(2, 0), id: 'c', name: 'Charlie' },
+    ],
   })
 }
 
@@ -38,6 +42,7 @@ function createFixture(overrides: Partial<GameState> = {}) {
     setTracks,
     ...overrides,
   }
+
   return {
     generateRoute,
     setPreviewRoute,
@@ -46,10 +51,6 @@ function createFixture(overrides: Partial<GameState> = {}) {
     state,
     useCase: new PreviewNewLineUseCase(new GameStore({ getState: () => state })),
   }
-}
-
-function coloredRoute(color: string | undefined): Route {
-  return { id: 'route-1', color, stNodes: [] }
 }
 
 afterEach(() => {
@@ -137,8 +138,8 @@ describe('PreviewNewLineUseCase', () => {
     it('follows a curve in the rails instead of cutting across it', () => {
       const { useCase } = createFixture({
         ...buildNetwork({
-          stations: [{ id: 'a', at: point(0, 0) }, { id: 'b', at: point(2, 0) }],
           links: [{ between: ['a', 'b'], shape: [point(1, 1)] }],
+          stations: [{ at: point(0, 0), id: 'a' }, { at: point(2, 0), id: 'b' }],
         }),
       })
       expect(useCase.execute(['a', 'b']).railPath(['a', 'b'])).toHaveLength(3)

@@ -22,6 +22,7 @@ export class LineColorPalette {
   // `current` isn't in the palette. Used by the "change color" button.
   static next(current: string): string {
     const index = COLORS.findIndex((color) => color.toLowerCase() === (current || '').toLowerCase())
+
     return COLORS[(index + 1) % COLORS.length]
   }
 
@@ -32,6 +33,7 @@ export class LineColorPalette {
     const available = COLORS.filter((color) => !taken.has(color.toLowerCase()))
     const pool = available.length ? available : COLORS
     const index = Math.min(pool.length - 1, Math.floor(random * pool.length))
+
     return pool[index]
   }
 }
