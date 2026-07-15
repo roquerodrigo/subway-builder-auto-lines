@@ -12,6 +12,7 @@ import { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
 import { RoutePreviewEditor } from '@/infrastructure/routing/RoutePreviewEditor'
 import { GameStore } from '@/infrastructure/store/GameStore'
 import { FloatingPanelRegistrar } from '@/infrastructure/ui/FloatingPanelRegistrar'
+import { clampStoredPanelGeometry } from '@/infrastructure/ui/PanelViewport'
 import { createAutoLinesPanel } from '@/presentation/AutoLinesPanel'
 import { logger } from '@/shared/Logger'
 
@@ -57,7 +58,12 @@ function bootstrap(): void {
     store,
   })
 
-  const registrar = new FloatingPanelRegistrar(api, panel)
+  // Pull a stale saved position back on-screen before the game reads it (so the
+  // game's own position state stays consistent); re-checked on each lifecycle hook,
+  // e.g. after the game window is resized.
+  clampStoredPanelGeometry()
+
+  const registrar = new FloatingPanelRegistrar(api, panel, clampStoredPanelGeometry)
   registrar.register()
   registrar.installLifecycleHooks()
   logger.log('mod loaded.')

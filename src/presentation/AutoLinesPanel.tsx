@@ -6,6 +6,7 @@ import type { Coordinate } from '@/shared/game/Coordinate'
 import { LineColorPalette } from '@/domain/newline/LineColorPalette'
 import { NewLinePlanner } from '@/domain/newline/NewLinePlanner'
 import { OrphanGroupFinder } from '@/domain/newline/OrphanGroupFinder'
+import { ensurePanelOnScreen } from '@/infrastructure/ui/PanelViewport'
 import { h, React } from '@/infrastructure/ui/react'
 import { TabBar } from '@/presentation/components/TabBar'
 import { useExtendPlan } from '@/presentation/hooks/useExtendPlan'
@@ -21,6 +22,7 @@ import { NewLineTab } from '@/presentation/view/NewLineTab'
 // browsing groups leaves no ghost line — the route is only built on commit.
 export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX.Element {
   return function AutoLinesPanel(): JSX.Element {
+    const rootRef = React.useRef<HTMLDivElement>(null)
     const [mode, setMode] = React.useState<PanelMode>(PanelMode.Extend)
     const [selection, setSelection] = React.useState<null | string>(null)
     const [choices, setChoices] = React.useState<ForkChoices>({})
@@ -31,6 +33,11 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     const [busy, setBusy] = React.useState(false)
     const [refreshKey, setRefreshKey] = React.useState(0)
     const bump = (): void => setRefreshKey((key) => key + 1)
+
+    // On open, make sure the game didn't restore the window off-screen (a stale
+    // saved position can leave it unreachable). Runs before paint, so it never
+    // flashes off-screen.
+    React.useLayoutEffect(() => ensurePanelOnScreen(rootRef.current), [])
 
     // Sweep orphan trains whenever the panel opens / refreshes — the player may
     // have removed a station or edited a route by hand before opening us.
@@ -242,7 +249,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     const onAction = showSuccess ? createAnother : mode === PanelMode.Extend ? doExtend : doCreate
 
     return (
-      <div className="flex h-full flex-col text-sm">
+      <div className="flex h-full flex-col text-sm" ref={rootRef}>
         <div className="flex items-stretch gap-2">
           <div className="flex-1">
             <TabBar mode={mode} onSelect={switchTab} />

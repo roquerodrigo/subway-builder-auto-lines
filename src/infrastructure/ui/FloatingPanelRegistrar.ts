@@ -15,6 +15,7 @@ export class FloatingPanelRegistrar {
   constructor(
     private readonly api: SubwayBuilderApi,
     private readonly render: (props: { height?: number, width?: number }) => unknown,
+    private readonly onLifecycle?: () => void,
   ) {}
 
   installLifecycleHooks(): void {
@@ -26,7 +27,10 @@ export class FloatingPanelRegistrar {
       const hook = hooks[name]
       if (typeof hook === 'function') {
         try {
-          hook(() => this.register())
+          hook(() => {
+            this.register()
+            this.onLifecycle?.()
+          })
         } catch {
           /* a missing hook is fine */
         }
