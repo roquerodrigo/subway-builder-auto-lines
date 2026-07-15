@@ -47,8 +47,14 @@ export class FleetProvisioner {
       if (typeof state.buyTrains === 'function') {
         const money = state.money
         state.setMoney?.(money + delta * (stats.carCost || DEFAULT_CAR_COST) + 1) // ensure affordable
-        state.buyTrains(delta, trainType)
-        state.setMoney?.(money) // refund
+        try {
+          state.buyTrains(delta, trainType)
+        } finally {
+          // The bump only exists to clear the game's affordability check, so it has
+          // to come back even when the purchase throws — otherwise the player keeps
+          // it (a stock top-up is tens of millions) and the game autosaves that.
+          state.setMoney?.(money)
+        }
       } else if (typeof state.setOwnedTrainCount === 'function' && state.ownedTrainCount < have + delta) {
         state.setOwnedTrainCount(have + delta) // fleet cap only — better than nothing
       }

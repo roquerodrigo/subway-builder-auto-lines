@@ -76,6 +76,19 @@ describe('FleetProvisioner', () => {
       expect(fake.state.money).toBe(1_000)
     })
 
+    // The bump exists only to clear the game's affordability check. Leaving it in
+    // place when the purchase throws hands the player the difference — a stock
+    // 30-car top-up is ~$81M — and the game autosaves it.
+    it('refunds the money it lent itself even when the purchase throws', () => {
+      fake.state.buyTrains = vi.fn((): never => {
+        throw new Error('the game refused the purchase')
+      })
+
+      makeProvisioner(fake).ensureCarInventory('route-1')
+
+      expect(fake.state.money).toBe(1_000)
+    })
+
     it('bumps the money before buying and refunds only after', () => {
       const seen: number[] = []
       fake.state.buyTrains = vi.fn((): void => {
