@@ -28,6 +28,23 @@ tabs: **Extend** and **New line**.
    middle — the train never doubles back.
 4. Click **Extend** to apply. The button is disabled when the line can't grow.
 
+![The Extend tab on Line 5. The panel lists the line from Chácara Klabin to Borba Gato and marks Santo Amaro, Largo Treze, Adolfo Pinheiro and Alto da Boa Vista as the stations it would add at the western end.](docs/images/extend-line-5-santo-amaro.png)
+
+Applying a plan moves the terminus, so running **Extend** again picks the corridor up
+where it left off — the same Line 5, now offered four more stations out to Capão
+Redondo:
+
+![The same line after the first extension. Santo Amaro is now part of it, and the panel marks Giovanni Gronchi, Vila das Belezas, Campo Limpo and Capão Redondo as the next additions.](docs/images/extend-line-5-capao-redondo.png)
+
+The walk has no length cap: Line 9 gains nine stations in a single click, all the way
+out to Osasco.
+
+![The Extend tab on Line 9, which runs Santo Amaro to Berrini. Nine stations from Vila Olímpia to Osasco are marked as additions, and the map shows the line's corridor in green.](docs/images/extend-line-9-osasco.png)
+
+Both ends are planned at once, and a line long enough simply scrolls the list.
+
+![The Extend tab on Line 1, a long north–south line. The station list scrolls, with the additions running up to Tucuruvi.](docs/images/extend-line-1-tucuruvi.png)
+
 ### New line
 
 1. The dropdown lists **groups of connected stations that have no line**, labeled by
@@ -37,6 +54,8 @@ tabs: **Extend** and **New line**.
    pass-through.
 3. Click **Create line**. Lines are numbered 1, 2, 3… A branched group yields one valid
    line; the rest is reported and stays available for another line.
+
+![The New line tab previewing the group Santo Amaro ↔ Berrini: five stations, a Change color control, and a Create line button. The previewed corridor is drawn on the map in the line's color.](docs/images/new-line-berrini.png)
 
 ## What it does under the hood
 
