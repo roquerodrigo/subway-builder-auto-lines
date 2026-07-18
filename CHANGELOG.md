@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/roquerodrigo/subway-builder-auto-lines/compare/v1.0.0...v1.0.1) (2026-07-18)
+
+
+### Miscellaneous Chores
+
+* support Subway Builder 1.4.12 ([e514b1b](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/e514b1b41a67c4b71e6e45a312b5c6ba6788544f))
+
 ## 1.0.0 (2026-07-16)
 
 
