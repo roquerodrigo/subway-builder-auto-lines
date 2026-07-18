@@ -1,6 +1,6 @@
 {
   "name": "subway-builder-auto-lines",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Subway Builder mod that extends a line along its corridor or creates a new line from unserved stations, with demand-based trains.",
   "private": true,
   "type": "module",
