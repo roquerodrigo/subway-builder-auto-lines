@@ -2,7 +2,7 @@
     "id": "auto-lines",
     "name": "Auto Lines",
     "description": "Automates line building: extend a line along its corridor, or create a new line from unconnected stations, with one click.",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "author": {
         "name": "Rodrigo Roque"
     },

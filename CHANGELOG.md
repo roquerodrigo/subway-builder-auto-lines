@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/roquerodrigo/subway-builder-auto-lines/compare/v1.1.0...v1.2.0) (2026-07-19)
+
+
+### Features
+
+* widen the subway-builder range to 1.4.0 and up ([7d0a7e1](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/7d0a7e1880277d13cff0d41184acf67188ad6c6b))
+
 ## [1.1.0](https://github.com/roquerodrigo/subway-builder-auto-lines/compare/v1.0.1...v1.1.0) (2026-07-19)
 
 
