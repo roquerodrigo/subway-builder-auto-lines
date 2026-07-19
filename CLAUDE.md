@@ -83,8 +83,9 @@ ZIP. A release missing either asset is rejected.
 > the rule are grandfathered — don't copy their manifests.
 
 The manifest must also carry `dependencies` with a `subway-builder` semver range
-(`<=1.4.12`); it's required, and `npm run package` refuses to build the assets when the
-manifest would fail the registry's checks. Submission is an issue form (**Publish New
+(`>=1.4.0 <1.5.0` — any 1.4.x, past or future, which is what the mod targets); it's
+required, and `npm run package` refuses to build the assets when the manifest would fail
+the registry's checks. Submission is an issue form (**Publish New
 Mod**) on `Subway-Builder-Modded/registry`.
 
 ## How it hooks in
