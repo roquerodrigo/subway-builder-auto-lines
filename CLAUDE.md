@@ -13,27 +13,18 @@ loads. React comes from the host at runtime (never bundled).
 
 ## Layout
 
-- `src/` — the mod, in TypeScript. **`main.tsx` is the entry** (composition root).
-  Layers: `domain/` (pure logic over typed `GameState`), `application/` (use cases),
-  `infrastructure/` (the only code that touches `window`/store/React),
-  `presentation/` (the `.tsx` panel), `shared/game/` (typed game contracts).
-- `src/manifest.json` — mod metadata; `main` is `index.js` (the built bundle).
-- `dist/index.js` — esbuild output (gitignored); the file `install-mod` copies.
-- `scripts/build.mjs` — esbuild bundle to a single IIFE (host React external).
-- `scripts/package-release.mjs` — the two assets a Railyard release needs.
-- `scripts/install-mod.mjs`, `debug.mjs`, `cdp-eval.mjs` — dev workflow (Node, macOS).
-- `tests/` — vitest + jsdom, mirroring `src/` (90% coverage floor).
-- `tsconfig.json` — TypeScript type-check config (`tsc --noEmit`; esbuild does the
-  emit). `eslint.config.mjs` — flat-config ESLint 9 (adapted from
-  `roquerodrigo/nextjs-boilerplate`, minus the Next presets): typescript-eslint
-  (type-aware), @stylistic, perfectionist, jsx-a11y, react-hooks.
-- `docs/game-internals.md` — **the reverse-engineered game internals this mod
-  depends on** (store, routes, trackGraph, crossovers, trains, demand, UI). Read
-  this first; it's the knowledge that's expensive to rediscover. The store/route/
-  train shapes are typed in `src/shared/game/`.
-- `docs/inspecting-the-game.md` — how to inspect/drive the live game over CDP.
-- `package.json` — npm scripts (`build`, `typecheck`, `lint`/`lint:fix`,
-  `install-mod`, `debug`, `inspect`, `play`).
+`src/` is the mod in TypeScript, laid out DDD-style: **`main.tsx` is the entry**
+(composition root); `domain/` is pure logic over a typed `GameState`, `application/`
+holds the use cases, **`infrastructure/` is the ONLY code allowed to touch
+`window`/store/React**, `presentation/` is the `.tsx` panel, `shared/game/` types the
+game contracts. esbuild bundles it all to a single IIFE `dist/index.js` (gitignored,
+host React external; the file `install-mod` copies). `src/manifest.json`'s `main` is
+that built `index.js`. `scripts/*.mjs` are the Node/macOS dev workflow.
+
+**Read `docs/game-internals.md` first** — the reverse-engineered game internals this
+mod depends on (store, routes, trackGraph, crossovers, trains, demand, UI); that
+knowledge is expensive to rediscover, and the store/route/train shapes are typed in
+`src/shared/game/`. `docs/inspecting-the-game.md` covers driving the live game over CDP.
 
 **TypeScript version**: pinned to **5.9** — not 7. TS 7 (the native Go port) ships
 no JS compiler API, so typescript-eslint (which needs it to parse `.ts`) can't run
@@ -105,61 +96,7 @@ lifecycle hooks** (`onGameInit`/`onCityLoad`/`onMapReady`), unregister-first so 
 stays a single button. It disables itself with a console error if the store handle
 is missing. Full details: `docs/game-internals.md`.
 
-## Code map (`src/`)
-
-**`domain/`** — pure logic over a typed `GameState` snapshot; no `window`, no side
-effects. Unit-testable with fixtures.
-- `network/CoordinateKey.ts` — `detectCoordinateKey(state)` auto-detects the
-  trackGraph key format (3 variants across game versions).
-- `network/StationIndex.ts` — `StationIndex.build(state)`: `nodeById/nodeByCoord/
-  stationOfNode/stationById` **plus a bound `coordKey`** (no mutable global).
-- `network/TrackNetwork.ts` — `adjacentStationNodeIds`, `neighborStationNodes`,
-  `distance`. The graph adjacency queries every planner uses.
-- `network/BranchExplorer.ts` — `leafPaths(root, neighborsOf, blocked)`: spanning
-  BFS that splits the region past a junction into one path per **end of the tracks**
-  (leaf). Shared by both fork flows (extend + new line) so a fork follows each branch
-  to its terminus instead of stopping at the junction.
-- `line/LineExpansionPlanner.ts` → `ExpansionPlan` (`endpoints`; `additionIds`,
-  `hasAction`). At a fork it offers one `ForkOption` per branch-to-terminus (full
-  path + its `applyNodeIds`). `line/Corridor.ts` — `order` (whole-line DFS) +
-  `longest` (stops at bifurcations/dead-ends).
-- `newline/OrphanGroupFinder.ts` → `OrphanGroup` (station-less components ≥2, with
-  terminal names). `newline/NewLinePlanner.ts` — `corridor` (longest degree-2 path +
-  the **forks** the user can continue into at each junction endpoint), `effectivePath`
-  (base + chosen branches), `addIds` (clean add-node ids: `edgePair` bootstrap +
-  middles both + far end single → **no 3× corruption**).
-  `newline/BulletSequence.ts` — next sequential numeric bullet.
-- `crossover/TerminusCrossoverFactory.ts` — geometry only: builds a scissors-
-  crossover Track (or null if already linked).
-- `fleet/DemandPeriod.ts` (hour→tier, 4 tiers), `fleet/ServiceSchedule.ts` (cycle→5/10/15/30-min
-  counts), `fleet/CarInventoryPolicy.ts` (`peakCars`, `requiredCars`).
-
-**`application/`** — use cases orchestrating domain + infra.
-- `ExtendLineUseCase`, `PreviewNewLineUseCase`, `CreateNewLineUseCase`,
-  `ProvisionServiceUseCase` (schedule + car inventory + spawn),
-  `DiscardNewLinePreviewUseCase`.
-
-**`infrastructure/`** — the only code that touches `window`/store/React.
-- `store/GameStore.ts` — the typed `getState()` handle (old `G()`); always a fresh
-  snapshot.
-- `routing/RouteEditGuard.ts` (fiber-walk `setUserAction`), `RoutePreviewEditor.ts`
-  (`applyAdditions` — **incremental one-node-at-a-time** preview flow),
-  `RouteMaintenance.ts` (`purgeOrphanTrains` + `stripTempRoutes`).
-- `crossover/CrossoverInjector.ts` (`setTracks`, `regenStations:false`),
-  `fleet/FleetProvisioner.ts` (`ensureCarInventory` via `buyTrains`+money-refund;
-  spawn), `game/TrainTypeCatalog.ts` (`getTrainType` stats + fallback).
-- `ui/react.ts` (defensive host-React shim: `h`/`Fragment`/hooks),
-  `ui/FloatingPanelRegistrar.ts` (`addFloatingPanel` + lifecycle re-register).
-
-**`presentation/`** — the React panel (function components; hooks required).
-`AutoLinesPanel.tsx` (a factory `createAutoLinesPanel(deps)` — one component drives
-both tabs) + `components/` (`TabBar`, `Select`, `StationList`+`buildDisplay`,
-`ForkSelector`), `view/` (`ExtendTab`, `NewLineTab`), `hooks/` (`useExtendPlan`
-memoised on `[mode,sel,refreshKey]` for fork-identity stability; `useNewLinePreview`
-async build whose **cleanup discards the uncommitted preview** on switch/close).
-
-**`main.tsx`** — composition root: guards `SubwayBuilderAPI`/store, wires deps,
-registers the panel.
+## Crossovers & fleet
 
 Terminus crossovers: game 1.4.0–1.4.2 auto-placed scissors-crossovers, but **1.4.10
 gates auto-placement behind a Settings toggle ("Auto Crossover") that ships OFF**,
@@ -255,11 +192,8 @@ lifecycle-hook re-registration that survives the city-load top-bar wipe.
 
 ## Paths & env overrides
 
+Scripts assume **macOS** (`osascript`, app-bundle layout, app-support path).
+
 - Game data dir: `SB_DATA_DIR` || `~/Library/Application Support/metro-maker4`.
 - App bundle: `SB_APP` || `/Applications/Subway Builder.app`.
 - CDP port: `SB_DEBUG_PORT` || `9222`.
-
-## Notes
-
-- Scripts assume macOS (`osascript`, app-bundle layout, app-support path).
-- Conventions mirror the sibling project `subway-builder-better-station-names`.
