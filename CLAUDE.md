@@ -182,6 +182,14 @@ place. `npm run install-mod` builds **and** copies into the game for a fresh boo
 Run `npm run typecheck` before trusting a build — esbuild strips types without
 checking them.
 
+> ### ⚠️ The game serves a **pre-built** Tailwind stylesheet — only classes it already uses exist
+> The mod's classes are never compiled; they only work if the game's own CSS happens
+> to define them. Fractional and arbitrary utilities (`top-0.5`, `left-[1.125rem]`)
+> are **not** in it and silently do nothing — that is how the settings switch first
+> shipped with its knob outside the track. Style **geometry inline** (`style={{}}`)
+> and keep classes to ones the game's UI visibly uses; when unsure, probe live:
+> append a `<div className="…">`, read `getComputedStyle`, remove it.
+
 The native panel button registers under uiComponents location **`top-bar`** and
 renders as a `<div title="Auto Lines">` in the mods strip (NOT a `<button>` — query
 by `[title]`). The panel's action button is the `w-full` one; the active tab also

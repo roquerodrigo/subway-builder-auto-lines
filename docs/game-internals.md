@@ -261,6 +261,18 @@ The binding inventory the game **charges for and gates on is CARS**
 
 ## 9. UI modding API (`window.SubwayBuilderAPI`)
 
+- **Styling: the stylesheet is pre-built, so a class the game never uses does not
+  exist.** Panel markup styled with Tailwind classes only renders as intended when
+  the game's own UI already uses that class; anything else is a silent no-op.
+  Verified live in 1.4.10: `h-5 w-9`, `h-4 w-4`, `w-20`, `gap-2/3`, `px-2/3`,
+  `py-1/2`, `space-y-2/3/4`, `text-xs/sm`, `rounded-md`, `rounded-full`,
+  `border-border`, `bg-primary`, `bg-primary/5`, `bg-primary/20`,
+  `bg-primary-foreground`, `text-muted-foreground`, `opacity-50`, `shrink-0`,
+  `uppercase`, `tracking-wide`, `text-right`, `transition-colors`,
+  `transition-all` all resolve — while **`top-0.5`, `left-0.5` and any arbitrary
+  value (`left-[1.125rem]`) resolve to nothing**. Set geometry inline instead. To
+  check a class, append a hidden `<div>` carrying it and read `getComputedStyle`.
+
 - Namespaces: `hooks` (22), `gameState`, `actions`, `stations`, `cities`, `ui`,
   `map`, `utils`, `storage`, `trains`, `popTiming`, `career`.
 - All of `addToolbarButton`, **`addToolbarPanel`**, `addFloatingPanel`,

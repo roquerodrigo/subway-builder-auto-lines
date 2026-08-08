@@ -16,6 +16,21 @@ describe('Toggle', () => {
     expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('false')
   })
 
+  // The game ships a pre-built stylesheet: a class it never uses itself (`top-0.5`,
+  // `left-[1.125rem]`) resolves to nothing there, so the knob is placed inline.
+  it('places the knob inside its track, by style rather than by class', () => {
+    const { rerender } = render(<Toggle checked={false} label="Auto trains" onChange={vi.fn()} />)
+    const knob = () => screen.getByRole('switch').firstElementChild as HTMLElement
+
+    expect(knob().style.top).toBe('2px')
+    expect(knob().style.left).toBe('2px')
+    expect(knob().className).not.toMatch(/top-|left-/)
+
+    rerender(<Toggle checked label="Auto trains" onChange={vi.fn()} />)
+
+    expect(knob().style.left).toBe('18px')
+  })
+
   it('reports the state the player switched to', () => {
     const onChange = vi.fn()
     const { rerender } = render(<Toggle checked label="Auto trains" onChange={onChange} />)
