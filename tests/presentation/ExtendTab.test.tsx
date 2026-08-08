@@ -16,6 +16,7 @@ import { buildCity, CITY, LINE_ONE, LINE_TWO } from './support/cityFixture'
 
 interface TabOptions {
   choices?: ForkChoices
+  cityHasLines?: boolean
   planData?: ExtendPlanData | null
   routes?: Route[]
   status?: string
@@ -40,6 +41,7 @@ function renderTab(options: TabOptions = {}) {
   const view = render(
     <ExtendTab
       choices={options.choices ?? {}}
+      cityHasLines={options.cityHasLines ?? true}
       onChoose={onChoose}
       onSelectRoute={onSelectRoute}
       planData={options.planData === undefined ? planFor(LINE_ONE) : options.planData}
@@ -53,9 +55,17 @@ function renderTab(options: TabOptions = {}) {
 }
 
 describe('ExtendTab', () => {
-  it('says so when the city has no line to extend', () => {
-    renderTab({ planData: null, routes: [] })
+  it('says so when the city has no line at all', () => {
+    renderTab({ cityHasLines: false, planData: null, routes: [] })
     expect(screen.getByText('No lines in this city.')).toBeDefined()
+    expect(screen.queryByRole('combobox')).toBeNull()
+  })
+
+  // The tab only lists lines that can grow, so an empty list in a city full of
+  // lines means they are all boxed in — not that there are none.
+  it('says so when every line in the city is boxed in', () => {
+    renderTab({ planData: null, routes: [] })
+    expect(screen.getByText('No line can be extended right now.')).toBeDefined()
     expect(screen.queryByRole('combobox')).toBeNull()
   })
 

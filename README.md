@@ -14,19 +14,21 @@ game. The toolbar button appears once a city is loaded.
 
 ## The panel
 
-A toolbar button (icon **Waypoints**) in the top-right actions opens the panel. Two
-tabs: **Extend** and **New line**.
+A toolbar button (icon **Waypoints**) in the top-right actions opens the panel. Three
+tabs: **Extend**, **New line** and **Settings**.
 
 ### Extend
 
-1. Pick a line from the dropdown.
+1. Pick a line from the dropdown. It lists **only the lines that can grow right
+   now** — a line already covering its corridor at both ends is left out, so every
+   option in it leads somewhere.
 2. The panel shows the **whole line** as a vertical list (a dot per station, in the
    line's color), with the stations that would be **added highlighted** at each end.
 3. Each end is **walked outward along its corridor**, auto-including single
    continuations until a **bifurcation** (where you choose the branch) or a dead end.
    Stations are added as a single stop at the new terminus and as through-stops in the
    middle — the train never doubles back.
-4. Click **Extend** to apply. The button is disabled when the line can't grow.
+4. Click **Extend** to apply.
 
 ![The Extend tab on Line 5. The panel lists the line from Chácara Klabin to Borba Gato and marks Santo Amaro, Largo Treze, Adolfo Pinheiro and Alto da Boa Vista as the stations it would add at the western end.](docs/images/extend-line-5-santo-amaro.png)
 

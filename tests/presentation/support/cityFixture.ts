@@ -153,4 +153,15 @@ export const CITY: CitySpec = {
   ],
 }
 
+// A second line that can grow: Golf–Hotel with track carrying on to Kilo, for the
+// cases that need two growable lines to pick between.
+export const LINE_THREE = buildRoute('r3', '3', '#0000ff', ['s7-a', 's8-a'])
+
+export const TWO_GROWABLE_LINES_CITY: CitySpec = {
+  ...CITY,
+  links: [...CITY.links, ['s8', 's11']],
+  routes: [LINE_ONE, LINE_THREE],
+  stations: [...CITY.stations, { center: [10, 0], id: 's11', name: 'Kilo' }],
+}
+
 export const EMPTY_CITY: CitySpec = { links: [], routes: [], stations: [] }

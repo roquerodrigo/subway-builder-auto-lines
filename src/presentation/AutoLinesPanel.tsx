@@ -11,6 +11,7 @@ import { ServiceSettingsPolicy } from '@/domain/settings/ServiceSettings'
 import { ensurePanelOnScreen } from '@/infrastructure/ui/PanelViewport'
 import { h, React } from '@/infrastructure/ui/react'
 import { TabBar } from '@/presentation/components/TabBar'
+import { useExtendableRoutes } from '@/presentation/hooks/useExtendableRoutes'
 import { useExtendPlan } from '@/presentation/hooks/useExtendPlan'
 import { useNewLinePreview } from '@/presentation/hooks/useNewLinePreview'
 import { errorMessage, realRoutes } from '@/presentation/labels'
@@ -49,7 +50,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
       dependencies.maintenance.purgeOrphanTrains()
     }, [refreshKey, mode])
 
-    const routes = mode === PanelMode.Extend ? realRoutes(dependencies.api) : []
+    const routes = useExtendableRoutes(dependencies, mode, refreshKey)
     const planData = useExtendPlan(dependencies, mode, selection, refreshKey)
     const groups = mode === PanelMode.New ? OrphanGroupFinder.find(dependencies.store.state()) : []
     const newLinePreview = useNewLinePreview(dependencies, mode, selection, refreshKey, groups)
@@ -301,6 +302,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
                 (
                   <ExtendTab
                     choices={choices}
+                    cityHasLines={realRoutes(dependencies.api).length > 0}
                     onChoose={chooseFork}
                     onSelectRoute={(value) => {
                       setSelection(value)

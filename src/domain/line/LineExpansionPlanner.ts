@@ -12,8 +12,9 @@ import { TrackNetwork } from '@/domain/network/TrackNetwork'
 // through-station (both platforms); the current end stays a single-platform terminus
 // until extended past it. Pure: reads state, returns a plan, mutates nothing.
 export class LineExpansionPlanner {
-  static plan(state: GameState, route: Route): ExpansionPlan {
-    const index = StationIndex.build(state)
+  // `index` is optional so a caller planning several lines at once can build the
+  // station index once and hand it to each.
+  static plan(state: GameState, route: Route, index: StationIndex = StationIndex.build(state)): ExpansionPlan {
     const network = new TrackNetwork(state, index)
 
     const lineStationNodeIds = new Set(route.stNodes.map((stationNode) => stationNode.id))

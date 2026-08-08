@@ -12,7 +12,7 @@ import { createAutoLinesPanel } from '@/presentation/AutoLinesPanel'
 
 import type { CitySpec } from './support/cityFixture'
 
-import { buildCity, centerOf, CITY, EMPTY_CITY, nameById } from './support/cityFixture'
+import { buildCity, centerOf, CITY, EMPTY_CITY, LINE_TWO, nameById, TWO_GROWABLE_LINES_CITY } from './support/cityFixture'
 
 // The first two colors of the line palette: what a fresh preview offers, and what
 // one click of "Change color" moves to.
@@ -230,18 +230,25 @@ describe('AutoLinesPanel extend tab', () => {
   })
 
   it('drops the status when the player picks another line', async () => {
-    const harness = createHarness()
+    const harness = createHarness(TWO_GROWABLE_LINES_CITY)
     harness.extendLine.execute.mockResolvedValue({ committed: false, hadAdditions: true })
     fireEvent.click(actionButton())
     await screen.findByText('Could not extend.')
-    fireEvent.change(pickers()[0], { target: { value: 'r2' } })
+    fireEvent.change(pickers()[0], { target: { value: 'r3' } })
     expect(screen.queryByText('Could not extend.')).toBeNull()
   })
 
-  it('has nothing to offer for a line that already covers its corridor', () => {
+  // A line boxed in by the tracks around it has nothing to offer, so the tab does
+  // not offer it at all.
+  it('leaves out a line that already covers its corridor', () => {
     createHarness()
-    fireEvent.change(pickers()[0], { target: { value: 'r2' } })
-    expect(screen.getByText('No extension possible for this line.')).toBeDefined()
+    const offered = Array.from(pickers()[0].options).map((option) => option.value)
+    expect(offered).toEqual(['r1'])
+  })
+
+  it('says so when every line in the city is boxed in', () => {
+    createHarness({ ...CITY, routes: [LINE_TWO] })
+    expect(screen.getByText('No line can be extended right now.')).toBeDefined()
     expect(actionButton().disabled).toBe(true)
   })
 

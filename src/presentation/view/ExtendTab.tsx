@@ -10,6 +10,7 @@ import { routeLabel } from '@/presentation/labels'
 
 export interface ExtendTabProps {
   choices: ForkChoices
+  cityHasLines: boolean
   onChoose: (stationId: string, option: ForkOption | null) => void
   onSelectRoute: (id: string) => void
   planData: ExtendPlanData | null
@@ -18,8 +19,12 @@ export interface ExtendTabProps {
   status: string
 }
 
+// `routes` are the lines that can grow right now, so an empty list still means two
+// different things to the player: a city with no lines at all, or lines that have
+// nowhere left to go.
 export function ExtendTab({
   choices,
+  cityHasLines,
   onChoose,
   onSelectRoute,
   planData,
@@ -28,7 +33,11 @@ export function ExtendTab({
   status,
 }: ExtendTabProps): JSX.Element {
   if (!routes.length) {
-    return <div className="text-xs text-muted-foreground">No lines in this city.</div>
+    return (
+      <div className="text-xs text-muted-foreground">
+        {cityHasLines ? 'No line can be extended right now.' : 'No lines in this city.'}
+      </div>
+    )
   }
 
   const hasAction = planData?.plan.hasAction() ?? false
