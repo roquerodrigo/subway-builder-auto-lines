@@ -5,21 +5,21 @@ import { ServiceSchedule } from '@/domain/fleet/ServiceSchedule'
 describe('ServiceSchedule.forCycleSeconds', () => {
   // Counts, not headways: the game reads trainSchedule as how many trains to run
   // in each period, and count = cycle / headway.
-  it('turns an hour-long round trip into 5/10/15/30-minute headways', () => {
+  it('turns an hour-long round trip into 5/15/30/60-minute headways', () => {
     expect(ServiceSchedule.forCycleSeconds(3600)).toEqual({
       highDemand: 12,
-      lowDemand: 4,
-      mediumDemand: 6,
-      veryLowDemand: 2,
+      lowDemand: 2,
+      mediumDemand: 4,
+      veryLowDemand: 1,
     })
   })
 
   it('scales every period with the length of the round trip', () => {
     expect(ServiceSchedule.forCycleSeconds(7200)).toEqual({
       highDemand: 24,
-      lowDemand: 8,
-      mediumDemand: 12,
-      veryLowDemand: 4,
+      lowDemand: 4,
+      mediumDemand: 8,
+      veryLowDemand: 2,
     })
   })
 

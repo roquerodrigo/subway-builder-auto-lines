@@ -66,10 +66,11 @@ Both ends are planned at once, and a line long enough simply scrolls the list.
   valid path found between station tracks". The mod fabricates a reversable
   scissors-crossover diagonal at each terminus when one is missing, so trains can
   reverse.
-- **Demand-based trains.** On create/extend it sets the line's `trainSchedule` for
-  5 / 10 / 15-minute headways (peak / midday / off-peak) — computed from the line's
-  round-trip time — and spawns the current period's trains; the game auto-spawns the
-  rest as the time of day changes.
+- **Demand-based trains.** On create/extend it puts full ten-car trains on the line
+  (or as many cars as the train type takes) and sets its `trainSchedule` for
+  5 / 15 / 30 / 60-minute headways (peak / midday / off-peak / night) — computed from
+  the round-trip time those trains make — then spawns the current period's trains;
+  the game auto-spawns the rest as the time of day changes.
 
 None of this is in the public API. See
 [`docs/game-internals.md`](docs/game-internals.md) for the exact mechanisms.
