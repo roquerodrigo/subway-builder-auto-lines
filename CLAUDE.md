@@ -107,13 +107,26 @@ no-op where one already exists (dedup by far-end linkage). See game-internals.md
 Cars are the real budget: the game gates "add a train" / "increase cars per train"
 on `ownedCarsByType[type]`, not the train cap. `FleetProvisioner.ensureCarInventory`
 grants enough via `buyTrains(delta, type)` (raises cars **and** cap together) with
-the money refunded, so it stays free. See game-internals.md §8.
+the money refunded, so it stays free. The cap is topped up separately by
+`ensureTrainCapacity` (`FleetCapacityPolicy`), because spawning stops dead at
+`ownedTrainCount` and a save whose cap fell behind the car stock would silently
+starve the schedules — it is a cap, not a purchase, so granting it costs nothing.
+See game-internals.md §8.
 
 A line the mod builds runs **full ten-car trains** (`TrainLength`, capped at the
 type's `maxCars`) on a **5/15/30/60-min** peak/midday/off-peak/night schedule
 (`ServiceSchedule`). `setTrainLength` runs **before** the schedule is derived, and the
 cycle is read back afterwards: a longer train dwells longer at every stop, so the game
 recomputes the round trip from it — and the round trip is what the schedule divides.
+
+Those numbers are **defaults, not constants**: the panel's **Settings** tab writes
+`ServiceSettings` (cars per train, the four headways, and an `autoTrains` switch)
+through `ServiceSettingsStore` into localStorage (`autolines-service-settings`), and
+`ProvisionServiceUseCase` reads them on every run — with `autoTrains` off it provisions
+nothing, leaving a built line for the player to service. Everything read back is
+sanitized (`ServiceSettingsPolicy`), and `ServiceSchedule` holds each quieter period to
+the busier one's train count, so headways ordered upside down can't break the game's
+`high >= medium >= low >= veryLow` invariant.
 
 ## Workflow — ALWAYS verify live
 

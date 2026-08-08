@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { DemandPeriod } from '@/domain/fleet/DemandPeriod'
 import { DemandTier } from '@/domain/fleet/DemandTier'
 import { ServiceSchedule } from '@/domain/fleet/ServiceSchedule'
+import { DEFAULT_SERVICE_SETTINGS } from '@/domain/settings/ServiceSettings'
 
 const SECONDS_PER_HOUR = 3600
 const SECONDS_PER_DAY = 86_400
@@ -60,7 +61,7 @@ describe('DemandPeriod.tierForElapsedSeconds', () => {
 // straight off a schedule with no mapping in between.
 describe('DemandTier', () => {
   it('names a field of the schedule the mod builds', () => {
-    const schedule = ServiceSchedule.forCycleSeconds(3600)
+    const schedule = ServiceSchedule.forCycleSeconds(3600, DEFAULT_SERVICE_SETTINGS.headwayMinutes)
     for (const tier of Object.values(DemandTier)) {
       expect(schedule[tier]).toBeTypeOf('number')
     }

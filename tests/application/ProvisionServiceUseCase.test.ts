@@ -1,14 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { ServiceSettings } from '@/domain/settings/ServiceSettings'
+import type { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import type { GameState } from '@/shared/game/GameState'
 import type { Route, StComboTiming } from '@/shared/game/Route'
 import type { TrainSchedule } from '@/shared/game/TrainSchedule'
 
 import { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import { DEFAULT_SERVICE_SETTINGS } from '@/domain/settings/ServiceSettings'
 import { FleetProvisioner } from '@/infrastructure/fleet/FleetProvisioner'
 import { TrainTypeCatalog } from '@/infrastructure/game/TrainTypeCatalog'
 import { GameStore } from '@/infrastructure/store/GameStore'
 import { logger } from '@/shared/Logger'
+
+// The panel's settings, as the use case reads them.
+function settingsStore(overrides: Partial<ServiceSettings> = {}): ServiceSettingsStore {
+  return { current: () => ({ ...DEFAULT_SERVICE_SETTINGS, ...overrides }) } as ServiceSettingsStore
+}
 
 const ROUTE_ID = 'route-1'
 // A half-hour round trip: 6 trains at the 5-min peak headway, 1 at the 60-min night one.
@@ -20,7 +28,7 @@ const SCHEDULE_FOR_CYCLE: TrainSchedule = {
   veryLowDemand: 1,
 }
 
-function createFixture(overrides: Partial<GameState> = {}) {
+function createFixture(overrides: Partial<GameState> = {}, settings: Partial<ServiceSettings> = {}) {
   const updateRouteProperty = vi.fn()
   const state: GameState = {
     money: 0,
@@ -34,16 +42,18 @@ function createFixture(overrides: Partial<GameState> = {}) {
   const fleet = new FleetProvisioner(store, new TrainTypeCatalog({}))
   const ensureCarInventory = vi.spyOn(fleet, 'ensureCarInventory').mockImplementation(() => {})
   const spawnForSchedule = vi.spyOn(fleet, 'spawnForSchedule').mockImplementation(() => {})
+  const ensureTrainCapacity = vi.spyOn(fleet, 'ensureTrainCapacity').mockImplementation(() => {})
   const setTrainLength = vi.spyOn(fleet, 'setTrainLength').mockImplementation(() => {})
   const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
 
   return {
     ensureCarInventory,
+    ensureTrainCapacity,
     setTrainLength,
     spawnForSchedule,
     state,
     updateRouteProperty,
-    useCase: new ProvisionServiceUseCase(store, fleet),
+    useCase: new ProvisionServiceUseCase(store, fleet, settingsStore(settings)),
     warn,
   }
 }
@@ -71,10 +81,49 @@ describe('ProvisionServiceUseCase', () => {
     expect(updateRouteProperty).toHaveBeenCalledWith(ROUTE_ID, 'trainSchedule', SCHEDULE_FOR_CYCLE)
   })
 
-  it('puts full-length trains on the line', () => {
+  it('puts trains as long as the player asked for on the line', () => {
     const { setTrainLength, useCase } = createFixture()
     useCase.execute(ROUTE_ID)
-    expect(setTrainLength).toHaveBeenCalledWith(ROUTE_ID)
+    expect(setTrainLength).toHaveBeenCalledWith(ROUTE_ID, DEFAULT_SERVICE_SETTINGS.carsPerTrain)
+  })
+
+  it('runs the shorter trains the player settled on', () => {
+    const { setTrainLength, useCase } = createFixture({}, { carsPerTrain: 4 })
+    useCase.execute(ROUTE_ID)
+    expect(setTrainLength).toHaveBeenCalledWith(ROUTE_ID, 4)
+  })
+
+  it('serves the line at the headways the player set', () => {
+    const { updateRouteProperty, useCase } = createFixture(
+      {},
+      { headwayMinutes: { midday: 10, night: 30, offPeak: 15, peak: 5 } },
+    )
+    useCase.execute(ROUTE_ID)
+    expect(updateRouteProperty).toHaveBeenCalledWith(ROUTE_ID, 'trainSchedule', {
+      highDemand: 6,
+      lowDemand: 2,
+      mediumDemand: 3,
+      veryLowDemand: 1,
+    })
+  })
+
+  // With auto trains off the mod still builds the line, it just leaves the service
+  // to the player.
+  it('leaves the line without service when the player switched auto trains off', () => {
+    const {
+      ensureCarInventory,
+      ensureTrainCapacity,
+      setTrainLength,
+      spawnForSchedule,
+      updateRouteProperty,
+      useCase,
+    } = createFixture({}, { autoTrains: false })
+    useCase.execute(ROUTE_ID)
+    expect(setTrainLength).not.toHaveBeenCalled()
+    expect(updateRouteProperty).not.toHaveBeenCalled()
+    expect(ensureCarInventory).not.toHaveBeenCalled()
+    expect(spawnForSchedule).not.toHaveBeenCalled()
+    expect(ensureTrainCapacity).not.toHaveBeenCalled()
   })
 
   // A longer train dwells longer at every stop, so the game recomputes the round
@@ -97,12 +146,13 @@ describe('ProvisionServiceUseCase', () => {
     const store = new GameStore({ getState: () => state })
     const fleet = new FleetProvisioner(store, new TrainTypeCatalog({}))
     vi.spyOn(fleet, 'ensureCarInventory').mockImplementation(() => {})
+    vi.spyOn(fleet, 'ensureTrainCapacity').mockImplementation(() => {})
     vi.spyOn(fleet, 'spawnForSchedule').mockImplementation(() => {})
     vi.spyOn(fleet, 'setTrainLength').mockImplementation(() => {
       state.routes = [routeWithTimings([{ departureTime: CYCLE_SECONDS * 2 }])]
     })
 
-    new ProvisionServiceUseCase(store, fleet).execute(ROUTE_ID)
+    new ProvisionServiceUseCase(store, fleet, settingsStore()).execute(ROUTE_ID)
 
     expect(state.updateRouteProperty).toHaveBeenCalledWith(ROUTE_ID, 'trainSchedule', {
       highDemand: 12,
@@ -129,6 +179,15 @@ describe('ProvisionServiceUseCase', () => {
     const { ensureCarInventory, spawnForSchedule, useCase } = createFixture()
     useCase.execute(ROUTE_ID)
     expect(ensureCarInventory.mock.invocationCallOrder[0])
+      .toBeLessThan(spawnForSchedule.mock.invocationCallOrder[0])
+  })
+
+  // Spawning stops dead at the fleet cap, so it has to clear the schedule first.
+  it('raises the fleet cap before spawning the trains it has to hold', () => {
+    const { ensureTrainCapacity, spawnForSchedule, useCase } = createFixture()
+    useCase.execute(ROUTE_ID)
+    expect(ensureTrainCapacity).toHaveBeenCalled()
+    expect(ensureTrainCapacity.mock.invocationCallOrder[0])
       .toBeLessThan(spawnForSchedule.mock.invocationCallOrder[0])
   })
 

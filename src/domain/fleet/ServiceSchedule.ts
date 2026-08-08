@@ -1,24 +1,28 @@
+import type { HeadwayMinutes } from '@/domain/settings/ServiceSettings'
 import type { TrainSchedule } from '@/shared/game/TrainSchedule'
 
-const PEAK_HEADWAY_SECONDS = 300 // 5 min
-const MIDDAY_HEADWAY_SECONDS = 900 // 15 min
-const OFF_PEAK_HEADWAY_SECONDS = 1800 // 30 min
-const NIGHT_HEADWAY_SECONDS = 3600 // 60 min
+const SECONDS_PER_MINUTE = 60
 
-// Builds a demand-based train schedule from a route's round-trip cycle. Counts,
-// not headways: count = round(cycleSeconds / headwaySeconds), min 1, for
-// 5/15/30/60-minute peak/midday/off-peak/night headways across the game's four
-// demand tiers (high >= medium >= low >= veryLow).
+// Builds a demand-based train schedule from a route's round-trip cycle and the
+// player's headways. Counts, not headways: count = round(cycleSeconds /
+// headwaySeconds), min 1, across the game's four demand tiers. The game requires
+// high >= medium >= low >= veryLow, so each quieter period is held to the busier
+// one's count — a player who asks for a longer peak headway than off-peak gets a
+// flat service, never an inverted one the game would choke on.
 export class ServiceSchedule {
-  static forCycleSeconds(cycleSeconds: number): TrainSchedule {
-    const countForHeadway = (headwaySeconds: number): number =>
-      Math.max(1, Math.round(cycleSeconds / headwaySeconds))
+  static forCycleSeconds(cycleSeconds: number, headwayMinutes: HeadwayMinutes): TrainSchedule {
+    const countForHeadway = (minutes: number): number =>
+      Math.max(1, Math.round(cycleSeconds / (Math.max(1, minutes) * SECONDS_PER_MINUTE)))
+
+    const highDemand = countForHeadway(headwayMinutes.peak)
+    const mediumDemand = Math.min(highDemand, countForHeadway(headwayMinutes.midday))
+    const lowDemand = Math.min(mediumDemand, countForHeadway(headwayMinutes.offPeak))
 
     return {
-      highDemand: countForHeadway(PEAK_HEADWAY_SECONDS),
-      lowDemand: countForHeadway(OFF_PEAK_HEADWAY_SECONDS),
-      mediumDemand: countForHeadway(MIDDAY_HEADWAY_SECONDS),
-      veryLowDemand: countForHeadway(NIGHT_HEADWAY_SECONDS),
+      highDemand,
+      lowDemand,
+      mediumDemand,
+      veryLowDemand: Math.min(lowDemand, countForHeadway(headwayMinutes.night)),
     }
   }
 }

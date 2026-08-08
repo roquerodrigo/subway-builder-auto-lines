@@ -11,12 +11,13 @@ import type { TrainTypeStats } from '@/shared/game/TrainType'
 import { FleetProvisioner } from '@/infrastructure/fleet/FleetProvisioner'
 import { TrainTypeCatalog } from '@/infrastructure/game/TrainTypeCatalog'
 import { DEFAULT_CAR_COST, DEFAULT_TRAIN_TYPE } from '@/shared/game/constants'
+import { logger } from '@/shared/Logger'
 
 import type { FakeGameStore } from '../fakeGameStore'
 
 import { createFakeGameStore } from '../fakeGameStore'
 
-const HEAVY_METRO_STATS: TrainTypeStats = { carCost: 2_700_000, carsPerCarSet: 5, maxCars: 15 }
+const HEAVY_METRO_STATS: TrainTypeStats = { carCost: 2_700_000, carsPerCarSet: 5, maxCars: 15, minCars: 1 }
 const SCHEDULE: TrainSchedule = { highDemand: 4, lowDemand: 1, mediumDemand: 2 }
 const HOUR = 3600
 const MORNING_RUSH = 8 * HOUR
@@ -128,7 +129,7 @@ describe('FleetProvisioner', () => {
     })
 
     it('falls back to the default car set, length and price when the type reports none', () => {
-      stats = { carCost: 0, carsPerCarSet: 0, maxCars: 0 }
+      stats = { carCost: 0, carsPerCarSet: 0, maxCars: 0, minCars: 1 }
       fake.state.ownedCarsByType = { 'heavy-metro': 0 }
 
       makeProvisioner(fake).ensureCarInventory('route-1')
@@ -231,31 +232,37 @@ describe('FleetProvisioner', () => {
       })
     })
 
-    it('puts full ten-car trains on the line', () => {
-      makeProvisioner(fake).setTrainLength('route-1')
+    it('puts the trains the player asked for on the line', () => {
+      makeProvisioner(fake).setTrainLength('route-1', 10)
 
       expect(fake.state.updateRouteProperty).toHaveBeenCalledWith('route-1', 'carsPerTrain', 10)
     })
 
+    it('runs the shorter train the player settled on', () => {
+      makeProvisioner(fake).setTrainLength('route-1', 4)
+
+      expect(fake.state.updateRouteProperty).toHaveBeenCalledWith('route-1', 'carsPerTrain', 4)
+    })
+
     // A light-rail unit tops out below ten and the game refuses a longer one.
     it('stops at what the train type takes', () => {
-      stats = { carCost: 900_000, carsPerCarSet: 2, maxCars: 6 }
+      stats = { carCost: 900_000, carsPerCarSet: 2, maxCars: 6, minCars: 1 }
 
-      makeProvisioner(fake).setTrainLength('route-1')
+      makeProvisioner(fake).setTrainLength('route-1', 10)
 
       expect(fake.state.updateRouteProperty).toHaveBeenCalledWith('route-1', 'carsPerTrain', 6)
     })
 
-    it('leaves a line that already runs full trains alone', () => {
+    it('leaves a line that already runs that train length alone', () => {
       fake.state.routes = [makeRoute({ carsPerTrain: 10 })]
 
-      makeProvisioner(fake).setTrainLength('route-1')
+      makeProvisioner(fake).setTrainLength('route-1', 10)
 
       expect(fake.state.updateRouteProperty).not.toHaveBeenCalled()
     })
 
     it('does nothing for a line that is not in the game', () => {
-      makeProvisioner(fake).setTrainLength('no-such-route')
+      makeProvisioner(fake).setTrainLength('no-such-route', 10)
 
       expect(fake.state.updateRouteProperty).not.toHaveBeenCalled()
     })
@@ -263,7 +270,87 @@ describe('FleetProvisioner', () => {
     it('carries on when the game exposes no updateRouteProperty', () => {
       fake.state.updateRouteProperty = undefined
 
-      expect(() => makeProvisioner(fake).setTrainLength('route-1')).not.toThrow()
+      expect(() => makeProvisioner(fake).setTrainLength('route-1', 10)).not.toThrow()
+    })
+  })
+
+  describe('ensureTrainCapacity', () => {
+    it('raises the fleet cap to what the city’s busiest period needs', () => {
+      const fake = createFakeGameStore({
+        ownedTrainCount: 3,
+        routes: [makeRoute()],
+        setOwnedTrainCount: vi.fn(),
+        trains: [],
+      })
+
+      makeProvisioner(fake).ensureTrainCapacity()
+
+      expect(fake.state.setOwnedTrainCount).toHaveBeenCalledWith(4)
+    })
+
+    // The cap is a cap: the game charges for cars, which are granted separately.
+    it('grants the cap for free', () => {
+      const fake = createFakeGameStore({
+        money: 1_000,
+        ownedTrainCount: 0,
+        routes: [makeRoute()],
+        setMoney: vi.fn(),
+        setOwnedTrainCount: vi.fn(),
+        trains: [],
+      })
+
+      makeProvisioner(fake).ensureTrainCapacity()
+
+      expect(fake.state.setMoney).not.toHaveBeenCalled()
+      expect(fake.state.money).toBe(1_000)
+    })
+
+    it('leaves a cap that already covers the city alone', () => {
+      const fake = createFakeGameStore({
+        ownedTrainCount: 40,
+        routes: [makeRoute()],
+        setOwnedTrainCount: vi.fn(),
+        trains: [],
+      })
+
+      makeProvisioner(fake).ensureTrainCapacity()
+
+      expect(fake.state.setOwnedTrainCount).not.toHaveBeenCalled()
+    })
+
+    it('never strands the trains already running', () => {
+      const fake = createFakeGameStore({
+        ownedTrainCount: 2,
+        routes: [makeRoute()],
+        setOwnedTrainCount: vi.fn(),
+        trains: [{ id: 't1', routeId: 'route-1' }, { id: 't2', routeId: 'route-1' }, { id: 't3', routeId: 'route-1' }],
+      })
+
+      makeProvisioner(fake).ensureTrainCapacity()
+
+      expect(fake.state.setOwnedTrainCount).toHaveBeenCalledWith(4)
+    })
+
+    it('carries on when the game exposes no setOwnedTrainCount', () => {
+      const fake = createFakeGameStore({ ownedTrainCount: 0, routes: [makeRoute()], trains: [] })
+
+      expect(() => makeProvisioner(fake).ensureTrainCapacity()).not.toThrow()
+    })
+
+    it('warns and carries on when the game rejects the cap', () => {
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const rejection = new Error('cap rejected')
+      const fake = createFakeGameStore({
+        ownedTrainCount: 0,
+        routes: [makeRoute()],
+        setOwnedTrainCount: () => {
+          throw rejection
+        },
+        trains: [],
+      })
+
+      expect(() => makeProvisioner(fake).ensureTrainCapacity()).not.toThrow()
+      expect(warn).toHaveBeenCalledWith('ensureTrainCapacity', rejection)
     })
   })
 

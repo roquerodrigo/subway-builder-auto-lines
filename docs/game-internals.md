@@ -209,8 +209,9 @@ outbound track, so the route's turnaround path fails ("No valid path…").
   ridership: **high** = 7–9 & 16–18; **medium** = 6, 10–15, 19; **low** = 3–5,
   20–22; **veryLow** = 0–2, 23. So a brand-new line needs no ridership history.
 - **Headway ↔ count**: `count = round(cycleSeconds / headwaySeconds)`, where
-  `cycleSeconds = route.stComboTimings[last].departureTime`. The mod uses
-  **5/10/15/30-minute** headways: `round(cycle/300 | 600 | 900 | 1800)`.
+  `cycleSeconds = route.stComboTimings[last].departureTime`. The mod defaults to
+  **5/15/30/60-minute** headways: `round(cycle/300 | 900 | 1800 | 3600)`, each
+  configurable from the panel's Settings tab (`ServiceSettings`).
 - The game **auto-spawns** trains each tick (while unpaused) until each route hits
   its current-hour count, capped at `ownedTrainCount`, spacing them via
   `findOptimalSpawnStation`. So **setting `trainSchedule` is usually all you need.**
@@ -243,6 +244,16 @@ The binding inventory the game **charges for and gates on is CARS**
   `buyTrains(delta, type)` **with the money refunded** (`setMoney(before)`), keeping
   it free while restoring the count/cars invariant. Verified live: cars 30→110,
   money unchanged, the increase gate clears at every length.
+- **The cap starves schedules too** (verified live, 1.4.10): `ownedTrainCount` is a
+  single number across every line and spawning stops at it, so a save whose cap sits
+  below the city's peak train count runs short even with cars in stock (cars are
+  per-type, the cap is global — `buyTrains` only keeps them in step for what it
+  buys). `ensureTrainCapacity` raises it to the busiest period's total across all
+  routes (never below the trains already running) via `setOwnedTrainCount`, which is
+  free. Live: cap 91 → 303 and cars 2935 → 3120 while money stayed at 0.
+- **`minCars` is real**: heavy-metro reports `minCars: 5`, `maxCars: 15`,
+  `carsPerCarSet: 1` in 1.4.10 — a per-train length outside that range is refused, so
+  `TrainLength` clamps to both ends.
 - `train = { id, routeId, length, cars, trainType, currentStComboInfo, motion,
   windows, timings, specs, operationalTime, operatingSchedule, stuckDetection }`.
 

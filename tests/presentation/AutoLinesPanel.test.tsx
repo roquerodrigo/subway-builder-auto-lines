@@ -1,10 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NewLinePreview } from '@/application/PreviewNewLineUseCase'
 import type { NewLineCorridor } from '@/domain/newline/NewLinePlanner'
 import type { PanelDependencies } from '@/presentation/PanelDependencies'
 
+import { DEFAULT_SERVICE_SETTINGS } from '@/domain/settings/ServiceSettings'
+import { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import { h } from '@/infrastructure/ui/react'
 import { createAutoLinesPanel } from '@/presentation/AutoLinesPanel'
 
@@ -25,6 +27,10 @@ function actionButton(): HTMLButtonElement {
   return document.querySelector('button.w-full') as HTMLButtonElement
 }
 
+beforeEach(() => {
+  window.localStorage.clear()
+})
+
 function createHarness(spec: CitySpec = CITY) {
   let city = spec
   let state = buildCity(city)
@@ -33,6 +39,7 @@ function createHarness(spec: CitySpec = CITY) {
   const showNotification = vi.fn()
   const maintenance = { purgeOrphanTrains: vi.fn() }
   const previewOverlay = { clear: vi.fn(), show: vi.fn() }
+  const settings = new ServiceSettingsStore()
   const extendLine = { execute: vi.fn(() => Promise.resolve({ committed: true, hadAdditions: true })) }
   const createNewLine = { execute: vi.fn(() => Promise.resolve(true)) }
   const discardPreview = { execute: vi.fn() }
@@ -56,6 +63,7 @@ function createHarness(spec: CitySpec = CITY) {
     maintenance,
     previewNewLine,
     previewOverlay,
+    settings,
     store: { state: () => state },
   }
   const AutoLinesPanel = createAutoLinesPanel(dependencies as unknown as PanelDependencies)
@@ -74,6 +82,7 @@ function createHarness(spec: CitySpec = CITY) {
       city = next
       state = buildCity(next)
     },
+    settings,
     showNotification,
     // Reshapes what the next preview reports, so a test can drive a corridor that
     // forks (or one that cannot form a line) without a bespoke city.
@@ -94,12 +103,20 @@ function openNewLineTab(): void {
   fireEvent.click(tab('New line'))
 }
 
+function openSettingsTab(): void {
+  fireEvent.click(tab('Settings'))
+}
+
 function pickers(): HTMLSelectElement[] {
   return screen.queryAllByRole<HTMLSelectElement>('combobox')
 }
 
 // The tab bar comes first in the DOM, so its "Extend" precedes the action button
 // of the same name.
+function settingsField(label: string): HTMLInputElement {
+  return screen.getByText(label).parentElement?.querySelector('input') as HTMLInputElement
+}
+
 function tab(name: string): HTMLElement {
   return screen.getAllByRole('button', { name })[0]
 }
@@ -372,6 +389,72 @@ describe('AutoLinesPanel new-line tab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reload options' }))
     expect(screen.getByText('No stations without a line.')).toBeDefined()
     expect(actionButton().disabled).toBe(true)
+  })
+})
+
+describe('AutoLinesPanel settings tab', () => {
+  it('shows the service the mod is set to provision', () => {
+    createHarness()
+    openSettingsTab()
+    expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true')
+    expect(settingsField('Cars per train').value).toBe('10')
+    expect(settingsField('Peak').value).toBe('5')
+  })
+
+  it('saves a change straight away, so the next line is built on it', () => {
+    const harness = createHarness()
+    openSettingsTab()
+    fireEvent.change(settingsField('Cars per train'), { target: { value: '6' } })
+    expect(harness.settings.current().carsPerTrain).toBe(6)
+    expect(new ServiceSettingsStore().current().carsPerTrain).toBe(6)
+  })
+
+  it('switches the trains off for every line the mod builds', () => {
+    const harness = createHarness()
+    openSettingsTab()
+    fireEvent.click(screen.getByRole('switch'))
+    expect(harness.settings.current().autoTrains).toBe(false)
+  })
+
+  it('offers no reset while the settings are untouched', () => {
+    createHarness()
+    openSettingsTab()
+    expect(actionButton().textContent).toBe('Reset to defaults')
+    expect(actionButton().disabled).toBe(true)
+  })
+
+  it('puts every setting back', () => {
+    const harness = createHarness()
+    openSettingsTab()
+    fireEvent.change(settingsField('Night'), { target: { value: '90' } })
+    expect(actionButton().disabled).toBe(false)
+
+    fireEvent.click(actionButton())
+
+    expect(harness.settings.current()).toEqual(DEFAULT_SERVICE_SETTINGS)
+    expect(settingsField('Night').value).toBe('60')
+  })
+
+  it('opens on what the player saved last session', () => {
+    new ServiceSettingsStore().save({ ...DEFAULT_SERVICE_SETTINGS, carsPerTrain: 4 })
+    createHarness()
+    openSettingsTab()
+    expect(settingsField('Cars per train').value).toBe('4')
+  })
+
+  it('leaves the map alone while the player is in the settings', () => {
+    const harness = createHarness()
+    harness.previewOverlay.show.mockClear()
+    openSettingsTab()
+    expect(harness.previewOverlay.show).not.toHaveBeenCalled()
+  })
+
+  it('goes back to a working extend tab', () => {
+    createHarness()
+    openSettingsTab()
+    fireEvent.click(tab('Extend'))
+    expect(actionButton().textContent).toBe('Extend')
+    expect(pickers()[0].value).toBe('r1')
   })
 })
 

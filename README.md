@@ -71,6 +71,13 @@ Both ends are planned at once, and a line long enough simply scrolls the list.
   5 / 15 / 30 / 60-minute headways (peak / midday / off-peak / night) — computed from
   the round-trip time those trains make — then spawns the current period's trains;
   the game auto-spawns the rest as the time of day changes.
+- **Free rolling stock.** A line only runs if the game has the cars and the fleet cap
+  for it, so the mod tops both up for free whenever they fall short — no purchase, no
+  money spent, and no "Not enough train cars" wall when lengthening a train.
+- **Service settings.** The **Settings** tab tunes all of it in-game: cars per train,
+  the headway of each period, and a switch that turns the whole thing off — with it
+  off, lines are still built and extended, they just come without trains. Settings
+  apply to the next line built or extended and survive a reload of the game.
 
 None of this is in the public API. See
 [`docs/game-internals.md`](docs/game-internals.md) for the exact mechanisms.
