@@ -4,6 +4,7 @@ import type { ExtendLineUseCase } from '@/application/ExtendLineUseCase'
 import type { PreviewNewLineUseCase } from '@/application/PreviewNewLineUseCase'
 import type { PreviewMapOverlay } from '@/infrastructure/map/PreviewMapOverlay'
 import type { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
+import type { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import type { GameStore } from '@/infrastructure/store/GameStore'
 import type { SubwayBuilderApi } from '@/shared/game/SubwayBuilderApi'
 
@@ -17,5 +18,6 @@ export interface PanelDependencies {
   maintenance: RouteMaintenance
   previewNewLine: PreviewNewLineUseCase
   previewOverlay: PreviewMapOverlay
+  settings: ServiceSettingsStore
   store: GameStore
 }

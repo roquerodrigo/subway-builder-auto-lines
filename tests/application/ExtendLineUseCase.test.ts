@@ -15,6 +15,7 @@ import { TrainTypeCatalog } from '@/infrastructure/game/TrainTypeCatalog'
 import { RouteEditGuard } from '@/infrastructure/routing/RouteEditGuard'
 import { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
 import { RoutePreviewEditor } from '@/infrastructure/routing/RoutePreviewEditor'
+import { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import { GameStore } from '@/infrastructure/store/GameStore'
 
 const ROUTE_ID = 'route-1'
@@ -37,7 +38,7 @@ function createFixture() {
   const guard = new RouteEditGuard()
   const previewEditor = new RoutePreviewEditor(store, guard, new RouteMaintenance(store))
   const applyAdditions = vi.spyOn(previewEditor, 'applyAdditions').mockResolvedValue({ committed: true })
-  const provisionService = new ProvisionServiceUseCase(store, new FleetProvisioner(store, new TrainTypeCatalog({})))
+  const provisionService = new ProvisionServiceUseCase(store, new FleetProvisioner(store, new TrainTypeCatalog({})), new ServiceSettingsStore())
   const provision = vi.spyOn(provisionService, 'execute').mockImplementation(() => {})
   const createCrossover = vi.spyOn(TerminusCrossoverFactory, 'create').mockReturnValue(crossover('crossover-1'))
   const index = StationIndex.build(state)

@@ -14,6 +14,7 @@ import { TrainTypeCatalog } from '@/infrastructure/game/TrainTypeCatalog'
 import { RouteEditGuard } from '@/infrastructure/routing/RouteEditGuard'
 import { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
 import { RoutePreviewEditor } from '@/infrastructure/routing/RoutePreviewEditor'
+import { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import { GameStore } from '@/infrastructure/store/GameStore'
 import { findRoute } from '@/shared/game/Route'
 
@@ -131,7 +132,7 @@ function createFixture() {
   const guardEnd = vi.spyOn(guard, 'end')
   const maintenance = new RouteMaintenance(store)
   const previewEditor = new RoutePreviewEditor(store, guard, maintenance)
-  const provisionService = new ProvisionServiceUseCase(store, new FleetProvisioner(store, new TrainTypeCatalog({})))
+  const provisionService = new ProvisionServiceUseCase(store, new FleetProvisioner(store, new TrainTypeCatalog({})), new ServiceSettingsStore())
   const provision = vi.spyOn(provisionService, 'execute').mockImplementation(() => {})
   const useCase = new CreateNewLineUseCase(
     store,

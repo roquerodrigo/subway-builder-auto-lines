@@ -4,6 +4,7 @@ import type { TrainSchedule } from '@/shared/game/TrainSchedule'
 
 import { CarInventoryPolicy } from '@/domain/fleet/CarInventoryPolicy'
 import { DemandPeriod } from '@/domain/fleet/DemandPeriod'
+import { FleetCapacityPolicy } from '@/domain/fleet/FleetCapacityPolicy'
 import { TrainLength } from '@/domain/fleet/TrainLength'
 import { DEFAULT_CAR_COST, DEFAULT_CARS_PER_CAR_SET, DEFAULT_TRAIN_TYPE } from '@/shared/game/constants'
 import { findRoute } from '@/shared/game/Route'
@@ -64,17 +65,35 @@ export class FleetProvisioner {
     }
   }
 
-  // Put full-length trains on the line. This has to run before the schedule is
-  // derived: a longer train dwells longer at every stop, so the game recomputes the
-  // round trip from it — and the round trip is what the schedule divides.
-  setTrainLength(routeId: string): void {
+  // Raise the fleet cap to what every line's busiest period needs. Spawning stops
+  // dead at ownedTrainCount, so a cap left behind — by an older save, or by cars
+  // bought outside the mod — silently starves the schedules. The cap costs nothing
+  // (the game charges for cars, granted above), so it is simply granted.
+  ensureTrainCapacity(): void {
+    try {
+      const state = this.store.state()
+      const required = FleetCapacityPolicy.requiredTrains(state.routes ?? [], (state.trains ?? []).length)
+      if (state.ownedTrainCount >= required) {
+        return
+      }
+      state.setOwnedTrainCount?.(required)
+    } catch (error) {
+      logger.warn('ensureTrainCapacity', error)
+    }
+  }
+
+  // Put the player's train length on the line, capped at what the type takes. This
+  // has to run before the schedule is derived: a longer train dwells longer at every
+  // stop, so the game recomputes the round trip from it — and the round trip is what
+  // the schedule divides.
+  setTrainLength(routeId: string, desiredCars: number): void {
     const state = this.store.state()
     const route = findRoute(state.routes, routeId)
     if (!route) {
       return
     }
 
-    const cars = TrainLength.forMaxCars(this.catalog.stats(route.trainType ?? DEFAULT_TRAIN_TYPE).maxCars)
+    const cars = TrainLength.carsFor(desiredCars, this.catalog.stats(route.trainType ?? DEFAULT_TRAIN_TYPE))
     if (route.carsPerTrain !== cars) {
       state.updateRouteProperty?.(routeId, 'carsPerTrain', cars)
     }

@@ -1,11 +1,13 @@
 import type { ForkChoices, ForkOption } from '@/domain/line/ExpansionPlan'
 import type { NewLineBranch, NewLineForkChoices } from '@/domain/newline/NewLinePlanner'
+import type { ServiceSettings } from '@/domain/settings/ServiceSettings'
 import type { PanelDependencies } from '@/presentation/PanelDependencies'
 import type { Coordinate } from '@/shared/game/Coordinate'
 
 import { LineColorPalette } from '@/domain/newline/LineColorPalette'
 import { NewLinePlanner } from '@/domain/newline/NewLinePlanner'
 import { OrphanGroupFinder } from '@/domain/newline/OrphanGroupFinder'
+import { ServiceSettingsPolicy } from '@/domain/settings/ServiceSettings'
 import { ensurePanelOnScreen } from '@/infrastructure/ui/PanelViewport'
 import { h, React } from '@/infrastructure/ui/react'
 import { TabBar } from '@/presentation/components/TabBar'
@@ -16,8 +18,9 @@ import { DEFAULT_LINE_COLOR } from '@/presentation/theme'
 import { PanelMode } from '@/presentation/types'
 import { ExtendTab } from '@/presentation/view/ExtendTab'
 import { NewLineTab } from '@/presentation/view/NewLineTab'
+import { SettingsTab } from '@/presentation/view/SettingsTab'
 
-// The panel content: one component drives both tabs. The new-line preview is
+// The panel content: one component drives all three tabs. The new-line preview is
 // computed purely (no route is generated, nothing is drawn on the map), so
 // browsing groups leaves no ghost line — the route is only built on commit.
 export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX.Element {
@@ -32,6 +35,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     const [status, setStatus] = React.useState('')
     const [busy, setBusy] = React.useState(false)
     const [refreshKey, setRefreshKey] = React.useState(0)
+    const [settings, setSettings] = React.useState<ServiceSettings>(() => dependencies.settings.current())
     const bump = (): void => setRefreshKey((key) => key + 1)
 
     // On open, make sure the game didn't restore the window off-screen (a stale
@@ -126,6 +130,9 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     // setSelection to the same value bails, so it settles without looping.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     React.useEffect(() => {
+      if (mode === PanelMode.Settings) {
+        return // no options here — leave the other tabs' selection where it was
+      }
       if (mode === PanelMode.New && successMessage) {
         return // holding on the success screen — don't jump to the next group
       }
@@ -180,6 +187,11 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
       setSelection(null)
       bump()
     }
+
+    // Settings are saved as they change (and sanitized on the way in), so the next
+    // line built or extended already runs on them.
+    const saveSettings = (next: ServiceSettings): void => setSettings(dependencies.settings.save(next))
+    const resetSettings = (): void => setSettings(dependencies.settings.reset())
 
     const chooseFork = (stationId: string, option: ForkOption | null): void => {
       setChoices((prev) => ({ ...prev, [stationId]: option }))
@@ -239,14 +251,31 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     }
 
     const showSuccess = mode === PanelMode.New && successMessage !== null
+    const onSettings = mode === PanelMode.Settings
     const canAct =
       !busy &&
-      (showSuccess ||
+      (onSettings ?
+          !ServiceSettingsPolicy.isDefault(settings) :
+        showSuccess ||
         (mode === PanelMode.Extend ?
             !!(planData && planData.plan.hasAction()) :
             !!(newLine && newLine.ok)))
-    const actionLabel = showSuccess ? 'Create another line' : mode === PanelMode.Extend ? 'Extend' : 'Create line'
-    const onAction = showSuccess ? createAnother : mode === PanelMode.Extend ? doExtend : doCreate
+    const actionLabel =
+      onSettings ?
+        'Reset to defaults' :
+        showSuccess ?
+          'Create another line' :
+          mode === PanelMode.Extend ?
+            'Extend' :
+            'Create line'
+    const onAction =
+      onSettings ?
+        resetSettings :
+        showSuccess ?
+          createAnother :
+          mode === PanelMode.Extend ?
+            doExtend :
+            doCreate
 
     return (
       <div className="flex h-full flex-col text-sm" ref={rootRef}>
@@ -266,49 +295,51 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
         </div>
 
         <div className="mt-3 flex-1 space-y-3 overflow-auto">
-          {mode === PanelMode.Extend ?
-              (
-                <ExtendTab
-                  choices={choices}
-                  onChoose={chooseFork}
-                  onSelectRoute={(value) => {
-                    setSelection(value)
-                    setChoices({})
-                    setStatus('')
-                  }}
-                  planData={planData}
-                  routes={routes}
-                  selection={selection}
-                  status={status}
-                />
-              ) :
-            showSuccess ?
+          {onSettings ?
+              <SettingsTab onChange={saveSettings} settings={settings} /> :
+            mode === PanelMode.Extend ?
                 (
-                  <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                    <div className="text-base font-semibold">{successMessage}</div>
-                  </div>
-                ) :
-                (
-                  <NewLineTab
-                    choices={newLineChoices}
-                    color={newLineColor}
-                    creating={busy}
-                    forks={newLinePreview?.corridor.forks ?? []}
-                    groups={groups}
-                    names={newLine?.names ?? []}
-                    ok={!!(newLine && newLine.ok)}
-                    onChoose={chooseBranch}
-                    onCycleColor={cycleColor}
-                    onSelectGroup={(value) => {
+                  <ExtendTab
+                    choices={choices}
+                    onChoose={chooseFork}
+                    onSelectRoute={(value) => {
                       setSelection(value)
+                      setChoices({})
                       setStatus('')
-                      setNewLineChoices({})
-                      setColorOverride(null)
-                      setSuccessMessage(null)
                     }}
+                    planData={planData}
+                    routes={routes}
                     selection={selection}
+                    status={status}
                   />
-                )}
+                ) :
+              showSuccess ?
+                  (
+                    <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                      <div className="text-base font-semibold">{successMessage}</div>
+                    </div>
+                  ) :
+                  (
+                    <NewLineTab
+                      choices={newLineChoices}
+                      color={newLineColor}
+                      creating={busy}
+                      forks={newLinePreview?.corridor.forks ?? []}
+                      groups={groups}
+                      names={newLine?.names ?? []}
+                      ok={!!(newLine && newLine.ok)}
+                      onChoose={chooseBranch}
+                      onCycleColor={cycleColor}
+                      onSelectGroup={(value) => {
+                        setSelection(value)
+                        setStatus('')
+                        setNewLineChoices({})
+                        setColorOverride(null)
+                        setSuccessMessage(null)
+                      }}
+                      selection={selection}
+                    />
+                  )}
         </div>
 
         <div className="mt-3 space-y-3 border-t border-border pt-3">

@@ -10,6 +10,7 @@ import { PreviewMapOverlay } from '@/infrastructure/map/PreviewMapOverlay'
 import { RouteEditGuard } from '@/infrastructure/routing/RouteEditGuard'
 import { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
 import { RoutePreviewEditor } from '@/infrastructure/routing/RoutePreviewEditor'
+import { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import { GameStore } from '@/infrastructure/store/GameStore'
 import { FloatingPanelRegistrar } from '@/infrastructure/ui/FloatingPanelRegistrar'
 import { clampStoredPanelGeometry } from '@/infrastructure/ui/PanelViewport'
@@ -40,8 +41,9 @@ function bootstrap(): void {
   const crossovers = new CrossoverInjector(store)
   const fleet = new FleetProvisioner(store, catalog)
   const previewOverlay = new PreviewMapOverlay(api)
+  const settings = new ServiceSettingsStore()
 
-  const provisionService = new ProvisionServiceUseCase(store, fleet)
+  const provisionService = new ProvisionServiceUseCase(store, fleet, settings)
   const extendLine = new ExtendLineUseCase(store, crossovers, previewEditor, provisionService)
   const previewNewLine = new PreviewNewLineUseCase(store)
   const createNewLine = new CreateNewLineUseCase(store, guard, maintenance, crossovers, previewEditor, provisionService)
@@ -55,6 +57,7 @@ function bootstrap(): void {
     maintenance,
     previewNewLine,
     previewOverlay,
+    settings,
     store,
   })
 

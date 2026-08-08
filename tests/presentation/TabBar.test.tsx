@@ -6,10 +6,11 @@ import { TabBar } from '@/presentation/components/TabBar'
 import { PanelMode } from '@/presentation/types'
 
 describe('TabBar', () => {
-  it('offers both tabs', () => {
+  it('offers every tab', () => {
     render(<TabBar mode={PanelMode.Extend} onSelect={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Extend' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'New line' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeDefined()
   })
 
   it('highlights the tab the player is on', () => {
@@ -23,6 +24,13 @@ describe('TabBar', () => {
     render(<TabBar mode={PanelMode.Extend} onSelect={onSelect} />)
     fireEvent.click(screen.getByRole('button', { name: 'New line' }))
     expect(onSelect).toHaveBeenCalledWith(PanelMode.New)
+  })
+
+  it('reports the settings tab the player opened', () => {
+    const onSelect = vi.fn()
+    render(<TabBar mode={PanelMode.Extend} onSelect={onSelect} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(onSelect).toHaveBeenCalledWith(PanelMode.Settings)
   })
 
   it('reports the tab the player is already on, leaving the panel to ignore it', () => {
