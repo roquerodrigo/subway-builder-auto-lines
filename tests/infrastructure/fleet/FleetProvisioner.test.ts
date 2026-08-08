@@ -221,6 +221,52 @@ describe('FleetProvisioner', () => {
     })
   })
 
+  describe('setTrainLength', () => {
+    let fake: FakeGameStore
+
+    beforeEach(() => {
+      fake = createFakeGameStore({
+        routes: [makeRoute()],
+        updateRouteProperty: vi.fn(),
+      })
+    })
+
+    it('puts full ten-car trains on the line', () => {
+      makeProvisioner(fake).setTrainLength('route-1')
+
+      expect(fake.state.updateRouteProperty).toHaveBeenCalledWith('route-1', 'carsPerTrain', 10)
+    })
+
+    // A light-rail unit tops out below ten and the game refuses a longer one.
+    it('stops at what the train type takes', () => {
+      stats = { carCost: 900_000, carsPerCarSet: 2, maxCars: 6 }
+
+      makeProvisioner(fake).setTrainLength('route-1')
+
+      expect(fake.state.updateRouteProperty).toHaveBeenCalledWith('route-1', 'carsPerTrain', 6)
+    })
+
+    it('leaves a line that already runs full trains alone', () => {
+      fake.state.routes = [makeRoute({ carsPerTrain: 10 })]
+
+      makeProvisioner(fake).setTrainLength('route-1')
+
+      expect(fake.state.updateRouteProperty).not.toHaveBeenCalled()
+    })
+
+    it('does nothing for a line that is not in the game', () => {
+      makeProvisioner(fake).setTrainLength('no-such-route')
+
+      expect(fake.state.updateRouteProperty).not.toHaveBeenCalled()
+    })
+
+    it('carries on when the game exposes no updateRouteProperty', () => {
+      fake.state.updateRouteProperty = undefined
+
+      expect(() => makeProvisioner(fake).setTrainLength('route-1')).not.toThrow()
+    })
+  })
+
   describe('spawnForSchedule', () => {
     let fake: FakeGameStore
 

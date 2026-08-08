@@ -11,12 +11,12 @@ import { GameStore } from '@/infrastructure/store/GameStore'
 import { logger } from '@/shared/Logger'
 
 const ROUTE_ID = 'route-1'
-// A half-hour round trip: 6 trains at the 5-min peak headway, 1 at the 30-min night one.
+// A half-hour round trip: 6 trains at the 5-min peak headway, 1 at the 60-min night one.
 const CYCLE_SECONDS = 1800
 const SCHEDULE_FOR_CYCLE: TrainSchedule = {
   highDemand: 6,
-  lowDemand: 2,
-  mediumDemand: 3,
+  lowDemand: 1,
+  mediumDemand: 2,
   veryLowDemand: 1,
 }
 
@@ -34,10 +34,12 @@ function createFixture(overrides: Partial<GameState> = {}) {
   const fleet = new FleetProvisioner(store, new TrainTypeCatalog({}))
   const ensureCarInventory = vi.spyOn(fleet, 'ensureCarInventory').mockImplementation(() => {})
   const spawnForSchedule = vi.spyOn(fleet, 'spawnForSchedule').mockImplementation(() => {})
+  const setTrainLength = vi.spyOn(fleet, 'setTrainLength').mockImplementation(() => {})
   const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
 
   return {
     ensureCarInventory,
+    setTrainLength,
     spawnForSchedule,
     state,
     updateRouteProperty,
@@ -67,6 +69,47 @@ describe('ProvisionServiceUseCase', () => {
     })
     useCase.execute(ROUTE_ID)
     expect(updateRouteProperty).toHaveBeenCalledWith(ROUTE_ID, 'trainSchedule', SCHEDULE_FOR_CYCLE)
+  })
+
+  it('puts full-length trains on the line', () => {
+    const { setTrainLength, useCase } = createFixture()
+    useCase.execute(ROUTE_ID)
+    expect(setTrainLength).toHaveBeenCalledWith(ROUTE_ID)
+  })
+
+  // A longer train dwells longer at every stop, so the game recomputes the round
+  // trip from it — and the round trip is what the schedule divides.
+  it('lengthens the trains before deriving the schedule from the round trip', () => {
+    const { setTrainLength, updateRouteProperty, useCase } = createFixture()
+    useCase.execute(ROUTE_ID)
+    expect(setTrainLength.mock.invocationCallOrder[0])
+      .toBeLessThan(updateRouteProperty.mock.invocationCallOrder[0])
+  })
+
+  it('derives the schedule from the round trip the longer trains make', () => {
+    const state: GameState = {
+      money: 0,
+      ownedTrainCount: 0,
+      routes: [routeWithTimings([{ departureTime: CYCLE_SECONDS }])],
+      tracks: [],
+      updateRouteProperty: vi.fn(),
+    }
+    const store = new GameStore({ getState: () => state })
+    const fleet = new FleetProvisioner(store, new TrainTypeCatalog({}))
+    vi.spyOn(fleet, 'ensureCarInventory').mockImplementation(() => {})
+    vi.spyOn(fleet, 'spawnForSchedule').mockImplementation(() => {})
+    vi.spyOn(fleet, 'setTrainLength').mockImplementation(() => {
+      state.routes = [routeWithTimings([{ departureTime: CYCLE_SECONDS * 2 }])]
+    })
+
+    new ProvisionServiceUseCase(store, fleet).execute(ROUTE_ID)
+
+    expect(state.updateRouteProperty).toHaveBeenCalledWith(ROUTE_ID, 'trainSchedule', {
+      highDemand: 12,
+      lowDemand: 2,
+      mediumDemand: 4,
+      veryLowDemand: 1,
+    })
   })
 
   it('grants the car inventory the line needs to run and to be lengthened', () => {

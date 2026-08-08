@@ -109,6 +109,12 @@ on `ownedCarsByType[type]`, not the train cap. `FleetProvisioner.ensureCarInvent
 grants enough via `buyTrains(delta, type)` (raises cars **and** cap together) with
 the money refunded, so it stays free. See game-internals.md §8.
 
+A line the mod builds runs **full ten-car trains** (`TrainLength`, capped at the
+type's `maxCars`) on a **5/15/30/60-min** peak/midday/off-peak/night schedule
+(`ServiceSchedule`). `setTrainLength` runs **before** the schedule is derived, and the
+cycle is read back afterwards: a longer train dwells longer at every stop, so the game
+recomputes the round trip from it — and the round trip is what the schedule divides.
+
 ## Workflow — ALWAYS verify live
 
 Everything here was built by driving the running game over CDP; the internals are
