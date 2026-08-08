@@ -1,15 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { ServiceSettings } from '@/domain/settings/ServiceSettings'
+
 import { DEFAULT_SERVICE_SETTINGS } from '@/domain/settings/ServiceSettings'
 import { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import { logger } from '@/shared/Logger'
 
 const STORAGE_KEY = 'autolines-service-settings'
 
-const CUSTOM_SETTINGS = {
+const CUSTOM_SETTINGS: ServiceSettings = {
   autoTrains: false,
   carsPerTrain: 6,
   headwayMinutes: { midday: 12, night: 45, offPeak: 20, peak: 4 },
+  serviceByRoute: { 'route-1': { carsPerTrain: 6, headwayMinutes: { midday: 8, night: 20, offPeak: 12, peak: 3 } } },
 }
 
 beforeEach(() => {
@@ -45,6 +48,14 @@ describe('ServiceSettingsStore', () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ carsPerTrain: 400 }))
 
     expect(new ServiceSettingsStore().current()).toEqual({ ...DEFAULT_SERVICE_SETTINGS, carsPerTrain: 15 })
+  })
+
+  it('keeps the service a line was given, across a reload of the game', () => {
+    new ServiceSettingsStore().save(CUSTOM_SETTINGS)
+
+    expect(new ServiceSettingsStore().current().serviceByRoute).toEqual({
+      'route-1': { carsPerTrain: 6, headwayMinutes: { midday: 8, night: 20, offPeak: 12, peak: 3 } },
+    })
   })
 
   it('falls back to the defaults for an unreadable entry', () => {

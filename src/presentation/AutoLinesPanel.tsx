@@ -1,9 +1,10 @@
 import type { ForkChoices, ForkOption } from '@/domain/line/ExpansionPlan'
 import type { NewLineBranch, NewLineForkChoices } from '@/domain/newline/NewLinePlanner'
-import type { ServiceSettings } from '@/domain/settings/ServiceSettings'
+import type { LineService, ServiceSettings } from '@/domain/settings/ServiceSettings'
 import type { PanelDependencies } from '@/presentation/PanelDependencies'
 import type { Coordinate } from '@/shared/game/Coordinate'
 
+import { LineHeadways } from '@/domain/fleet/LineHeadways'
 import { LineColorPalette } from '@/domain/newline/LineColorPalette'
 import { NewLinePlanner } from '@/domain/newline/NewLinePlanner'
 import { OrphanGroupFinder } from '@/domain/newline/OrphanGroupFinder'
@@ -14,10 +15,11 @@ import { TabBar } from '@/presentation/components/TabBar'
 import { useExtendableRoutes } from '@/presentation/hooks/useExtendableRoutes'
 import { useExtendPlan } from '@/presentation/hooks/useExtendPlan'
 import { useNewLinePreview } from '@/presentation/hooks/useNewLinePreview'
-import { errorMessage, realRoutes } from '@/presentation/labels'
+import { errorMessage, realRoutes, routeLabel } from '@/presentation/labels'
 import { DEFAULT_LINE_COLOR } from '@/presentation/theme'
 import { PanelMode } from '@/presentation/types'
 import { ExtendTab } from '@/presentation/view/ExtendTab'
+import { LineServiceTab } from '@/presentation/view/LineServiceTab'
 import { NewLineTab } from '@/presentation/view/NewLineTab'
 import { SettingsTab } from '@/presentation/view/SettingsTab'
 
@@ -37,6 +39,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     const [busy, setBusy] = React.useState(false)
     const [refreshKey, setRefreshKey] = React.useState(0)
     const [settings, setSettings] = React.useState<ServiceSettings>(() => dependencies.settings.current())
+    const [serviceDraft, setServiceDraft] = React.useState<LineService | null>(null)
     const bump = (): void => setRefreshKey((key) => key + 1)
 
     // On open, make sure the game didn't restore the window off-screen (a stale
@@ -51,6 +54,12 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     }, [refreshKey, mode])
 
     const routes = useExtendableRoutes(dependencies, mode, refreshKey)
+    // Every line in the city, for the tabs that serve lines rather than grow them.
+    const cityRoutes = React.useMemo(
+      () => (mode === PanelMode.PerLine || mode === PanelMode.Settings ? realRoutes(dependencies.api) : []),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [mode, refreshKey],
+    )
     const planData = useExtendPlan(dependencies, mode, selection, refreshKey)
     const groups = mode === PanelMode.New ? OrphanGroupFinder.find(dependencies.store.state()) : []
     const newLinePreview = useNewLinePreview(dependencies, mode, selection, refreshKey, groups)
@@ -134,6 +143,15 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
       if (mode === PanelMode.Settings) {
         return // no options here — leave the other tabs' selection where it was
       }
+      if (mode === PanelMode.PerLine) {
+        if (cityRoutes.length && !cityRoutes.some((route) => route.id === selection)) {
+          setSelection(cityRoutes[0].id)
+        } else if (!cityRoutes.length && selection !== null) {
+          setSelection(null)
+        }
+
+        return
+      }
       if (mode === PanelMode.New && successMessage) {
         return // holding on the success screen — don't jump to the next group
       }
@@ -164,6 +182,7 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
       setColorOverride(null)
       setSuccessMessage(null)
       setStatus('')
+      setServiceDraft(null)
     }
 
     const chooseBranch = (atStationId: string, branch: NewLineBranch | null): void => {
@@ -193,6 +212,40 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     // line built or extended already runs on them.
     const saveSettings = (next: ServiceSettings): void => setSettings(dependencies.settings.save(next))
     const resetSettings = (): void => setSettings(dependencies.settings.reset())
+
+    // What the selected line is set to run at — its own headways, or the city-wide
+    // ones it still follows — with whatever the player has typed on top, until they
+    // apply it. What it actually runs is read back off its schedule beside them.
+    const selectedRoute = cityRoutes.find((route) => route.id === selection) ?? null
+    const lineService =
+      selectedRoute ?
+          ServiceSettingsPolicy.serviceFor(settings, selectedRoute.id) :
+          { carsPerTrain: settings.carsPerTrain, headwayMinutes: settings.headwayMinutes }
+    const shownService = serviceDraft ?? lineService
+    const runningService: LineService | null =
+      selectedRoute ?
+          {
+            carsPerTrain: selectedRoute.carsPerTrain ?? lineService.carsPerTrain,
+            headwayMinutes: LineHeadways.forRoute(selectedRoute, lineService.headwayMinutes),
+          } :
+        null
+
+    const applyLineService = (): void => {
+      if (!selectedRoute || !serviceDraft) {
+        return
+      }
+      const applied = dependencies.applyLineService.execute(selectedRoute.id, serviceDraft)
+      setSettings(dependencies.settings.current())
+      setServiceDraft(null)
+      setStatus(applied ? routeLabel(selectedRoute) + ' rescheduled' : 'The game has not timed this line yet.')
+      bump()
+    }
+
+    const applyServiceToAllLines = (): void => {
+      const count = dependencies.applyServiceToAllLines.execute()
+      setStatus(count === 1 ? 'Applied to 1 line' : 'Applied to ' + count + ' lines')
+      bump()
+    }
 
     const chooseFork = (stationId: string, option: ForkOption | null): void => {
       setChoices((prev) => ({ ...prev, [stationId]: option }))
@@ -253,30 +306,37 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
 
     const showSuccess = mode === PanelMode.New && successMessage !== null
     const onSettings = mode === PanelMode.Settings
+    const onPerLine = mode === PanelMode.PerLine
     const canAct =
       !busy &&
       (onSettings ?
-          !ServiceSettingsPolicy.isDefault(settings) :
-        showSuccess ||
-        (mode === PanelMode.Extend ?
-            !!(planData && planData.plan.hasAction()) :
-            !!(newLine && newLine.ok)))
+        settings.autoTrains && cityRoutes.length > 0 :
+        onPerLine ?
+            !!(selectedRoute && serviceDraft && settings.autoTrains) :
+          showSuccess ||
+          (mode === PanelMode.Extend ?
+              !!(planData && planData.plan.hasAction()) :
+              !!(newLine && newLine.ok)))
     const actionLabel =
       onSettings ?
-        'Reset to defaults' :
-        showSuccess ?
-          'Create another line' :
-          mode === PanelMode.Extend ?
-            'Extend' :
-            'Create line'
+        'Apply to every line' :
+        onPerLine ?
+          selectedRoute ? 'Apply to ' + routeLabel(selectedRoute) : 'Apply' :
+          showSuccess ?
+            'Create another line' :
+            mode === PanelMode.Extend ?
+              'Extend' :
+              'Create line'
     const onAction =
       onSettings ?
-        resetSettings :
-        showSuccess ?
-          createAnother :
-          mode === PanelMode.Extend ?
-            doExtend :
-            doCreate
+        applyServiceToAllLines :
+        onPerLine ?
+          applyLineService :
+          showSuccess ?
+            createAnother :
+            mode === PanelMode.Extend ?
+              doExtend :
+              doCreate
 
     return (
       <div className="flex h-full flex-col text-sm" ref={rootRef}>
@@ -297,51 +357,74 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
 
         <div className="mt-3 flex-1 space-y-3 overflow-auto">
           {onSettings ?
-              <SettingsTab onChange={saveSettings} settings={settings} /> :
-            mode === PanelMode.Extend ?
+              (
+                <SettingsTab
+                  canReset={!ServiceSettingsPolicy.isDefault(settings)}
+                  onChange={saveSettings}
+                  onReset={resetSettings}
+                  settings={settings}
+                />
+              ) :
+            onPerLine ?
                 (
-                  <ExtendTab
-                    choices={choices}
-                    cityHasLines={realRoutes(dependencies.api).length > 0}
-                    onChoose={chooseFork}
+                  <LineServiceTab
+                    onChange={setServiceDraft}
                     onSelectRoute={(value) => {
                       setSelection(value)
-                      setChoices({})
+                      setServiceDraft(null)
                       setStatus('')
                     }}
-                    planData={planData}
-                    routes={routes}
+                    ownService={!!(selectedRoute && ServiceSettingsPolicy.hasOwnService(settings, selectedRoute.id))}
+                    routes={cityRoutes}
+                    running={runningService}
                     selection={selection}
-                    status={status}
+                    service={shownService}
                   />
                 ) :
-              showSuccess ?
+              mode === PanelMode.Extend ?
                   (
-                    <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                      <div className="text-base font-semibold">{successMessage}</div>
-                    </div>
-                  ) :
-                  (
-                    <NewLineTab
-                      choices={newLineChoices}
-                      color={newLineColor}
-                      creating={busy}
-                      forks={newLinePreview?.corridor.forks ?? []}
-                      groups={groups}
-                      names={newLine?.names ?? []}
-                      ok={!!(newLine && newLine.ok)}
-                      onChoose={chooseBranch}
-                      onCycleColor={cycleColor}
-                      onSelectGroup={(value) => {
+                    <ExtendTab
+                      choices={choices}
+                      cityHasLines={realRoutes(dependencies.api).length > 0}
+                      onChoose={chooseFork}
+                      onSelectRoute={(value) => {
                         setSelection(value)
+                        setChoices({})
                         setStatus('')
-                        setNewLineChoices({})
-                        setColorOverride(null)
-                        setSuccessMessage(null)
                       }}
+                      planData={planData}
+                      routes={routes}
                       selection={selection}
+                      status={status}
                     />
-                  )}
+                  ) :
+                showSuccess ?
+                    (
+                      <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                        <div className="text-base font-semibold">{successMessage}</div>
+                      </div>
+                    ) :
+                    (
+                      <NewLineTab
+                        choices={newLineChoices}
+                        color={newLineColor}
+                        creating={busy}
+                        forks={newLinePreview?.corridor.forks ?? []}
+                        groups={groups}
+                        names={newLine?.names ?? []}
+                        ok={!!(newLine && newLine.ok)}
+                        onChoose={chooseBranch}
+                        onCycleColor={cycleColor}
+                        onSelectGroup={(value) => {
+                          setSelection(value)
+                          setStatus('')
+                          setNewLineChoices({})
+                          setColorOverride(null)
+                          setSuccessMessage(null)
+                        }}
+                        selection={selection}
+                      />
+                    )}
         </div>
 
         <div className="mt-3 space-y-3 border-t border-border pt-3">

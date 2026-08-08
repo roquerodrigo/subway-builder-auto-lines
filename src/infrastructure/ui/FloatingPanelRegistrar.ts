@@ -1,5 +1,11 @@
 import type { SubwayBuilderApi } from '@/shared/game/SubwayBuilderApi'
 
+import {
+  DEFAULT_PANEL_HEIGHT,
+  DEFAULT_PANEL_WIDTH,
+  MIN_PANEL_HEIGHT,
+  MIN_PANEL_WIDTH,
+} from '@/infrastructure/ui/panelGeometry'
 import { isReactAvailable } from '@/infrastructure/ui/react'
 import { logger } from '@/shared/Logger'
 
@@ -57,12 +63,12 @@ export class FloatingPanelRegistrar {
       /* first registration — nothing to unregister */
     }
     ui.addFloatingPanel({
-      defaultHeight: 650,
-      defaultWidth: 475,
+      defaultHeight: DEFAULT_PANEL_HEIGHT,
+      defaultWidth: DEFAULT_PANEL_WIDTH,
       icon: 'Waypoints',
       id: PANEL_ID,
-      minHeight: 380,
-      minWidth: 320,
+      minHeight: MIN_PANEL_HEIGHT,
+      minWidth: MIN_PANEL_WIDTH,
       render: this.render,
       title: 'Auto Lines',
       tooltip: 'Auto Lines',

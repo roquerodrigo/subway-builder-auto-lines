@@ -21,6 +21,16 @@ export class FleetProvisioner {
     private readonly catalog: TrainTypeCatalog,
   ) {}
 
+  // Put a schedule on a line and back it with the stock to run it: the counts the
+  // game reads, the cars they take, the fleet cap they need, and the current
+  // period's trains right away.
+  applySchedule(routeId: string, schedule: TrainSchedule): void {
+    this.store.state().updateRouteProperty?.(routeId, 'trainSchedule', schedule)
+    this.ensureCarInventory(routeId)
+    this.ensureTrainCapacity()
+    this.spawnForSchedule(routeId, schedule)
+  }
+
   ensureCarInventory(routeId: string): void {
     try {
       const state = this.store.state()

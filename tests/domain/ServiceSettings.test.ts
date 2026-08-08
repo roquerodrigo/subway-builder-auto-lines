@@ -15,6 +15,7 @@ describe('DEFAULT_SERVICE_SETTINGS', () => {
       autoTrains: true,
       carsPerTrain: 10,
       headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: 5 },
+      serviceByRoute: {},
     })
   })
 })
@@ -25,6 +26,7 @@ describe('ServiceSettingsPolicy.sanitize', () => {
       autoTrains: false,
       carsPerTrain: 6,
       headwayMinutes: { midday: 12, night: 45, offPeak: 20, peak: 4 },
+      serviceByRoute: { 'route-1': { carsPerTrain: 6, headwayMinutes: { midday: 8, night: 20, offPeak: 12, peak: 3 } } },
     }
 
     expect(ServiceSettingsPolicy.sanitize(settings)).toEqual(settings)
@@ -43,6 +45,7 @@ describe('ServiceSettingsPolicy.sanitize', () => {
       autoTrains: true,
       carsPerTrain: 8,
       headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: 3 },
+      serviceByRoute: {},
     })
   })
 
@@ -96,5 +99,96 @@ describe('ServiceSettingsPolicy.isDefault', () => {
     for (const change of changes) {
       expect(ServiceSettingsPolicy.isDefault({ ...DEFAULT_SERVICE_SETTINGS, ...change })).toBe(false)
     }
+  })
+})
+
+describe('ServiceSettingsPolicy per-line service', () => {
+  const OWN_SERVICE = {
+    carsPerTrain: 6,
+    headwayMinutes: { midday: 8, night: 20, offPeak: 12, peak: 3 },
+  }
+  const CITY_WIDE = {
+    carsPerTrain: DEFAULT_SERVICE_SETTINGS.carsPerTrain,
+    headwayMinutes: DEFAULT_SERVICE_SETTINGS.headwayMinutes,
+  }
+
+  it('serves a line on the city-wide settings by default', () => {
+    expect(ServiceSettingsPolicy.serviceFor(DEFAULT_SERVICE_SETTINGS, 'route-1')).toEqual(CITY_WIDE)
+    expect(ServiceSettingsPolicy.hasOwnService(DEFAULT_SERVICE_SETTINGS, 'route-1')).toBe(false)
+  })
+
+  it('serves a line on its own service once it has one', () => {
+    const settings = ServiceSettingsPolicy.withRouteService(DEFAULT_SERVICE_SETTINGS, 'route-1', OWN_SERVICE)
+
+    expect(ServiceSettingsPolicy.serviceFor(settings, 'route-1')).toEqual(OWN_SERVICE)
+    expect(ServiceSettingsPolicy.hasOwnService(settings, 'route-1')).toBe(true)
+  })
+
+  it('leaves every other line on the city-wide settings', () => {
+    const settings = ServiceSettingsPolicy.withRouteService(DEFAULT_SERVICE_SETTINGS, 'route-1', OWN_SERVICE)
+
+    expect(ServiceSettingsPolicy.serviceFor(settings, 'route-2')).toEqual(CITY_WIDE)
+  })
+
+  // Otherwise "same as everywhere else" would linger as an override and stop
+  // following the settings the player copied it from.
+  it('puts a line back on the city-wide settings when given those exact numbers', () => {
+    const own = ServiceSettingsPolicy.withRouteService(DEFAULT_SERVICE_SETTINGS, 'route-1', OWN_SERVICE)
+
+    expect(ServiceSettingsPolicy.withRouteService(own, 'route-1', CITY_WIDE).serviceByRoute).toEqual({})
+  })
+
+  it('keeps a line that differs only in train length', () => {
+    const settings = ServiceSettingsPolicy.withRouteService(DEFAULT_SERVICE_SETTINGS, 'route-1', {
+      ...CITY_WIDE,
+      carsPerTrain: 4,
+    })
+
+    expect(ServiceSettingsPolicy.serviceFor(settings, 'route-1').carsPerTrain).toBe(4)
+  })
+
+  it('forgets the service of a line that is no longer in the city', () => {
+    const settings = ServiceSettingsPolicy.withRouteService(DEFAULT_SERVICE_SETTINGS, 'route-1', OWN_SERVICE)
+
+    expect(ServiceSettingsPolicy.keepingRoutes(settings, ['route-2']).serviceByRoute).toEqual({})
+    expect(ServiceSettingsPolicy.keepingRoutes(settings, ['route-1']).serviceByRoute)
+      .toEqual({ 'route-1': OWN_SERVICE })
+  })
+
+  it('counts a line with its own service as a change from the defaults', () => {
+    const settings = ServiceSettingsPolicy.withRouteService(DEFAULT_SERVICE_SETTINGS, 'route-1', OWN_SERVICE)
+
+    expect(ServiceSettingsPolicy.isDefault(settings)).toBe(false)
+  })
+
+  it('sanitizes the service a line was given', () => {
+    const settings = ServiceSettingsPolicy.sanitize({
+      serviceByRoute: { 'route-1': { carsPerTrain: 99, headwayMinutes: { peak: 0 } }, 'route-2': 'nonsense' },
+    })
+
+    expect(settings.serviceByRoute).toEqual({
+      'route-1': {
+        carsPerTrain: 15,
+        headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: MIN_HEADWAY_MINUTES },
+      },
+    })
+  })
+
+  // An entry from before per-line service existed carries none of it.
+  it('falls back to the city-wide numbers for a line entry that says nothing', () => {
+    const settings = ServiceSettingsPolicy.sanitize({
+      carsPerTrain: 8,
+      headwayMinutes: { peak: 4 },
+      serviceByRoute: { 'route-1': {} },
+    })
+
+    expect(settings.serviceByRoute['route-1']).toEqual({
+      carsPerTrain: 8,
+      headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: 4 },
+    })
+  })
+
+  it('ignores per-line service that is not an object', () => {
+    expect(ServiceSettingsPolicy.sanitize({ serviceByRoute: 7 }).serviceByRoute).toEqual({})
   })
 })

@@ -1,3 +1,5 @@
+import { DEFAULT_PANEL_HEIGHT, DEFAULT_PANEL_WIDTH } from '@/infrastructure/ui/panelGeometry'
+
 // The game renders the floating panel as a `position: fixed` wrapper positioned by
 // inline left/top, and persists that geometry to localStorage under
 // `floating-panel-<id>`. A stale saved position (from a different window size, or a
@@ -35,8 +37,8 @@ export function clampStoredPanelGeometry(): void {
   if (typeof geometry.x !== 'number' || typeof geometry.y !== 'number') {
     return
   }
-  const width = typeof geometry.width === 'number' ? geometry.width : 475
-  const height = typeof geometry.height === 'number' ? geometry.height : 650
+  const width = typeof geometry.width === 'number' ? geometry.width : DEFAULT_PANEL_WIDTH
+  const height = typeof geometry.height === 'number' ? geometry.height : DEFAULT_PANEL_HEIGHT
   const maxLeft = Math.max(MARGIN, window.innerWidth - width - MARGIN)
   const maxTop = Math.max(MARGIN, window.innerHeight - height - MARGIN)
   const x = clamp(geometry.x, MARGIN, maxLeft)

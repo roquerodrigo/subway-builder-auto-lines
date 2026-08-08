@@ -1,6 +1,7 @@
 export enum PanelMode {
   Extend = 'extend',
   New = 'new',
+  PerLine = 'per-line',
   Settings = 'settings',
 }
 

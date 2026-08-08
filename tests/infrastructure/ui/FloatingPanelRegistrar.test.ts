@@ -77,8 +77,8 @@ describe('FloatingPanelRegistrar', () => {
       makeRegistrar().register()
 
       expect(ui.addFloatingPanel).toHaveBeenCalledWith(expect.objectContaining({
-        defaultHeight: 650,
-        defaultWidth: 475,
+        defaultHeight: 700,
+        defaultWidth: 500,
         minHeight: 380,
         minWidth: 320,
       }) as FloatingPanelConfig)

@@ -1,18 +1,18 @@
 import type { FleetProvisioner } from '@/infrastructure/fleet/FleetProvisioner'
 import type { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import type { GameStore } from '@/infrastructure/store/GameStore'
-import type { Route } from '@/shared/game/Route'
 
 import { ServiceSchedule } from '@/domain/fleet/ServiceSchedule'
-import { findRoute } from '@/shared/game/Route'
+import { ServiceSettingsPolicy } from '@/domain/settings/ServiceSettings'
+import { cycleSecondsOf, findRoute } from '@/shared/game/Route'
 import { logger } from '@/shared/Logger'
 
 // Gives a route demand-based service: trains as long as the player asked for, a
-// schedule built from its round-trip cycle and the player's headways, enough car
-// inventory and fleet cap to run and lengthen it (granted for free where the game
-// falls short), and the current period's trains spawned now.
-// The player can switch the whole thing off, in which case a line the mod builds
-// is left without trains for them to service by hand.
+// schedule built from its round-trip cycle and the service that line is on (its
+// own when it has been given one), enough car inventory and fleet cap to run
+// and lengthen it (granted for free where the game falls short), and the current
+// period's trains spawned now. The player can switch the whole thing off, in which
+// case a line the mod builds is left without trains for them to service by hand.
 export class ProvisionServiceUseCase {
   constructor(
     private readonly store: GameStore,
@@ -32,28 +32,20 @@ export class ProvisionServiceUseCase {
         return
       }
 
-      this.fleet.setTrainLength(routeId, settings.carsPerTrain)
+      const service = ServiceSettingsPolicy.serviceFor(settings, routeId)
+      this.fleet.setTrainLength(routeId, service.carsPerTrain)
 
       // Read the cycle back after the trains were lengthened, not before: the game
       // has just recomputed the round trip the schedule is derived from.
       const lengthened = findRoute(this.store.state().routes, routeId)
       const cycleSeconds = (lengthened && cycleSecondsOf(lengthened)) || cycleSecondsOf(route)
 
-      const schedule = ServiceSchedule.forCycleSeconds(cycleSeconds, settings.headwayMinutes)
-      this.store.state().updateRouteProperty?.(routeId, 'trainSchedule', schedule)
-      this.fleet.ensureCarInventory(routeId)
-      this.fleet.ensureTrainCapacity()
-      this.fleet.spawnForSchedule(routeId, schedule)
+      this.fleet.applySchedule(
+        routeId,
+        ServiceSchedule.forCycleSeconds(cycleSeconds, service.headwayMinutes),
+      )
     } catch (error) {
       logger.warn('provisionService', error)
     }
   }
-}
-
-// The last stop's departure time is the full round trip; a line the game has not
-// timed yet has none.
-function cycleSecondsOf(route: Route): number {
-  const timings = route.stComboTimings
-
-  return timings && timings.length ? timings[timings.length - 1].departureTime : 0
 }

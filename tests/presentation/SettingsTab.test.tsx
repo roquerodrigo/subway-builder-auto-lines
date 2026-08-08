@@ -11,11 +11,19 @@ function field(label: string): HTMLInputElement {
   return screen.getByText(label).parentElement?.querySelector('input') as HTMLInputElement
 }
 
-function renderTab(settings: Partial<ServiceSettings> = {}) {
+function renderTab(settings: Partial<ServiceSettings> = {}, canReset = true) {
   const onChange = vi.fn()
-  const view = render(<SettingsTab onChange={onChange} settings={{ ...DEFAULT_SERVICE_SETTINGS, ...settings }} />)
+  const onReset = vi.fn()
+  const view = render(
+    <SettingsTab
+      canReset={canReset}
+      onChange={onChange}
+      onReset={onReset}
+      settings={{ ...DEFAULT_SERVICE_SETTINGS, ...settings }}
+    />,
+  )
 
-  return { onChange, view }
+  return { onChange, onReset, view }
 }
 
 describe('SettingsTab', () => {
@@ -59,6 +67,17 @@ describe('SettingsTab', () => {
       ...DEFAULT_SERVICE_SETTINGS,
       headwayMinutes: { ...DEFAULT_SERVICE_SETTINGS.headwayMinutes, offPeak: 20 },
     })
+  })
+
+  it('puts every setting back when asked', () => {
+    const { onReset } = renderTab()
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }))
+    expect(onReset).toHaveBeenCalled()
+  })
+
+  it('offers no reset while the settings are untouched', () => {
+    renderTab({}, false)
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Reset to defaults' }).disabled).toBe(true)
   })
 
   // Nothing below is applied while auto trains are off, so nothing below is editable.

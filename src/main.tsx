@@ -1,3 +1,5 @@
+import { ApplyLineServiceUseCase } from '@/application/ApplyLineServiceUseCase'
+import { ApplyServiceToAllLinesUseCase } from '@/application/ApplyServiceToAllLinesUseCase'
 import { CreateNewLineUseCase } from '@/application/CreateNewLineUseCase'
 import { DiscardNewLinePreviewUseCase } from '@/application/DiscardNewLinePreviewUseCase'
 import { ExtendLineUseCase } from '@/application/ExtendLineUseCase'
@@ -44,6 +46,8 @@ function bootstrap(): void {
   const settings = new ServiceSettingsStore()
 
   const provisionService = new ProvisionServiceUseCase(store, fleet, settings)
+  const applyServiceToAllLines = new ApplyServiceToAllLinesUseCase(store, provisionService)
+  const applyLineService = new ApplyLineServiceUseCase(store, settings, provisionService)
   const extendLine = new ExtendLineUseCase(store, crossovers, previewEditor, provisionService)
   const previewNewLine = new PreviewNewLineUseCase(store)
   const createNewLine = new CreateNewLineUseCase(store, guard, maintenance, crossovers, previewEditor, provisionService)
@@ -51,6 +55,8 @@ function bootstrap(): void {
 
   const panel = createAutoLinesPanel({
     api,
+    applyLineService,
+    applyServiceToAllLines,
     createNewLine,
     discardPreview,
     extendLine,

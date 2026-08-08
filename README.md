@@ -14,8 +14,8 @@ game. The toolbar button appears once a city is loaded.
 
 ## The panel
 
-A toolbar button (icon **Waypoints**) in the top-right actions opens the panel. Three
-tabs: **Extend**, **New line** and **Settings**.
+A toolbar button (icon **Waypoints**) in the top-right actions opens the panel. Four
+tabs: **Extend**, **New line**, **Per line** and **Settings**.
 
 ### Extend
 
@@ -80,6 +80,12 @@ Both ends are planned at once, and a line long enough simply scrolls the list.
   the headway of each period, and a switch that turns the whole thing off — with it
   off, lines are still built and extended, they just come without trains. Settings
   apply to the next line built or extended and survive a reload of the game.
+  **Apply to every line** puts them on the whole city at once, for the lines built
+  before you settled on your numbers.
+- **Per-line service.** The **Per line** tab gives a single line its own train length
+  and headways, and shows what it actually runs today beside them. A line served this
+  way keeps its own service when it is later extended; typing the city-wide numbers
+  back in puts it on those again.
 
 None of this is in the public API. See
 [`docs/game-internals.md`](docs/game-internals.md) for the exact mechanisms.

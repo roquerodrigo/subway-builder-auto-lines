@@ -10,6 +10,7 @@ describe('TabBar', () => {
     render(<TabBar mode={PanelMode.Extend} onSelect={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Extend' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'New line' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Per line' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Settings' })).toBeDefined()
   })
 
@@ -31,6 +32,13 @@ describe('TabBar', () => {
     render(<TabBar mode={PanelMode.Extend} onSelect={onSelect} />)
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
     expect(onSelect).toHaveBeenCalledWith(PanelMode.Settings)
+  })
+
+  it('reports the per-line tab the player opened', () => {
+    const onSelect = vi.fn()
+    render(<TabBar mode={PanelMode.Extend} onSelect={onSelect} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Per line' }))
+    expect(onSelect).toHaveBeenCalledWith(PanelMode.PerLine)
   })
 
   it('reports the tab the player is already on, leaving the panel to ignore it', () => {

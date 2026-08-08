@@ -30,6 +30,7 @@ export function TabBar({ mode, onSelect }: TabBarProps): JSX.Element {
     <div className="flex gap-2">
       {tab('Extend', PanelMode.Extend)}
       {tab('New line', PanelMode.New)}
+      {tab('Per line', PanelMode.PerLine)}
       {tab('Settings', PanelMode.Settings)}
     </div>
   )

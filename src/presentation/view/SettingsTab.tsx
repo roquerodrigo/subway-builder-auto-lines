@@ -11,14 +11,16 @@ import { NumberField } from '@/presentation/components/NumberField'
 import { Toggle } from '@/presentation/components/Toggle'
 
 export interface SettingsTabProps {
+  canReset: boolean
   onChange: (settings: ServiceSettings) => void
+  onReset: () => void
   settings: ServiceSettings
 }
 
 // Everything the mod puts on a line after building it, under the player's hand:
 // the whole thing can be switched off, and the numbers behind it are theirs to
 // set. Saved as they type, and applied to the next line built or extended.
-export function SettingsTab({ onChange, settings }: SettingsTabProps): JSX.Element {
+export function SettingsTab({ canReset, onChange, onReset, settings }: SettingsTabProps): JSX.Element {
   const off = !settings.autoTrains
   const headway = (period: keyof HeadwayMinutes, label: string): JSX.Element => (
     <NumberField
@@ -70,9 +72,22 @@ export function SettingsTab({ onChange, settings }: SettingsTabProps): JSX.Eleme
         {headway('night', 'Night')}
         <div className="text-xs text-muted-foreground">
           How often a train runs in each period. The trains needed follow from the line’s round trip, so a longer line
-          gets more of them.
+          gets more of them. A line given its own headways in the Headways tab keeps them.
         </div>
       </div>
+
+      <button
+        className={
+          'rounded-md border border-border py-2 text-xs font-semibold ' +
+          (canReset ? 'cursor-pointer hover:bg-primary/10' : 'opacity-50 cursor-default')
+        }
+        disabled={!canReset}
+        onClick={onReset}
+        style={{ width: '100%' }}
+        type="button"
+      >
+        Reset to defaults
+      </button>
     </div>
   )
 }

@@ -120,13 +120,23 @@ cycle is read back afterwards: a longer train dwells longer at every stop, so th
 recomputes the round trip from it — and the round trip is what the schedule divides.
 
 Those numbers are **defaults, not constants**: the panel's **Settings** tab writes
-`ServiceSettings` (cars per train, the four headways, and an `autoTrains` switch)
-through `ServiceSettingsStore` into localStorage (`autolines-service-settings`), and
-`ProvisionServiceUseCase` reads them on every run — with `autoTrains` off it provisions
-nothing, leaving a built line for the player to service. Everything read back is
-sanitized (`ServiceSettingsPolicy`), and `ServiceSchedule` holds each quieter period to
-the busier one's train count, so headways ordered upside down can't break the game's
+`ServiceSettings` (cars per train, the four headways, an `autoTrains` switch, and
+`serviceByRoute` for lines given their own) through `ServiceSettingsStore` into
+localStorage (`autolines-service-settings`), and `ProvisionServiceUseCase` reads them on
+every run via `ServiceSettingsPolicy.serviceFor(routeId)` — with `autoTrains` off it
+provisions nothing, leaving a built line for the player to service. Everything read back
+is sanitized (`ServiceSettingsPolicy`), and `ServiceSchedule` holds each quieter period
+to the busier one's train count, so headways ordered upside down can't break the game's
 `high >= medium >= low >= veryLow` invariant.
+
+The panel's other two service entry points are thin: `ApplyServiceToAllLinesUseCase`
+runs the provisioning over every real route (Settings → "Apply to every line"), and
+`ApplyLineServiceUseCase` saves one line's own service and re-provisions just it
+(**Per line** tab). Per-line entries are pruned to the routes that still exist on each
+save, and a line handed the city-wide numbers drops its entry instead of freezing a copy
+of them. The tab's fields show the **configured** service; `LineHeadways.forRoute` reads
+the **running** one back off the route's schedule for the note beneath them (whole trains
+over the round trip rarely divide into the exact headway asked for).
 
 ## Workflow — ALWAYS verify live
 

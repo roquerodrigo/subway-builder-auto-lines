@@ -24,6 +24,14 @@ export interface StComboTiming {
   departureTime: number
 }
 
+// The last stop's departure time is the full round trip; a line the game has not
+// timed yet has none.
+export function cycleSecondsOf(route: Route): number {
+  const timings = route.stComboTimings
+
+  return timings && timings.length ? timings[timings.length - 1].departureTime : 0
+}
+
 export function findRoute(routes: Route[] | undefined, routeId: string): Route | undefined {
   return (routes ?? []).find((route) => route.id === routeId)
 }

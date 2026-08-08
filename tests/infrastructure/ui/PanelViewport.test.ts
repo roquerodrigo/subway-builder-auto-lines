@@ -70,7 +70,7 @@ describe('clampStoredPanelGeometry', () => {
   it('assumes the default panel size when the saved geometry has none', () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ x: 3000, y: 80 }))
     clampStoredPanelGeometry()
-    expect(storedGeometry()).toEqual({ height: 650, width: 475, x: 1800 - 475 - 8, y: 80 })
+    expect(storedGeometry()).toEqual({ height: 700, width: 500, x: 1800 - 500 - 8, y: 80 })
   })
 
   it('keeps the panel reachable when it is wider than the viewport', () => {

@@ -12,7 +12,16 @@ import { createAutoLinesPanel } from '@/presentation/AutoLinesPanel'
 
 import type { CitySpec } from './support/cityFixture'
 
-import { buildCity, centerOf, CITY, EMPTY_CITY, LINE_TWO, nameById, TWO_GROWABLE_LINES_CITY } from './support/cityFixture'
+import {
+  buildCity,
+  centerOf,
+  CITY,
+  EMPTY_CITY,
+  LINE_TWO,
+  nameById,
+  SCHEDULED_CITY,
+  TWO_GROWABLE_LINES_CITY,
+} from './support/cityFixture'
 
 // The first two colors of the line palette: what a fresh preview offers, and what
 // one click of "Change color" moves to.
@@ -40,6 +49,8 @@ function createHarness(spec: CitySpec = CITY) {
   const maintenance = { purgeOrphanTrains: vi.fn() }
   const previewOverlay = { clear: vi.fn(), show: vi.fn() }
   const settings = new ServiceSettingsStore()
+  const applyServiceToAllLines = { execute: vi.fn(() => (city.routes ?? []).length) }
+  const applyLineService = { execute: vi.fn(() => true) }
   const extendLine = { execute: vi.fn(() => Promise.resolve({ committed: true, hadAdditions: true })) }
   const createNewLine = { execute: vi.fn(() => Promise.resolve(true)) }
   const discardPreview = { execute: vi.fn() }
@@ -57,6 +68,8 @@ function createHarness(spec: CitySpec = CITY) {
   }
   const dependencies = {
     api: { gameState: { getRoutes: () => city.routes ?? [] }, ui: { showNotification } },
+    applyLineService,
+    applyServiceToAllLines,
     createNewLine,
     discardPreview,
     extendLine,
@@ -70,6 +83,8 @@ function createHarness(spec: CitySpec = CITY) {
   const view = render(<AutoLinesPanel />)
 
   return {
+    applyLineService,
+    applyServiceToAllLines,
     createNewLine,
     discardPreview,
     extendLine,
@@ -103,6 +118,10 @@ function openNewLineTab(): void {
   fireEvent.click(tab('New line'))
 }
 
+function openPerLineTab(): void {
+  fireEvent.click(tab('Per line'))
+}
+
 function openSettingsTab(): void {
   fireEvent.click(tab('Settings'))
 }
@@ -113,6 +132,10 @@ function pickers(): HTMLSelectElement[] {
 
 // The tab bar comes first in the DOM, so its "Extend" precedes the action button
 // of the same name.
+function resetButton(): HTMLButtonElement {
+  return screen.getByRole<HTMLButtonElement>('button', { name: 'Reset to defaults' })
+}
+
 function settingsField(label: string): HTMLInputElement {
   return screen.getByText(label).parentElement?.querySelector('input') as HTMLInputElement
 }
@@ -426,20 +449,52 @@ describe('AutoLinesPanel settings tab', () => {
   it('offers no reset while the settings are untouched', () => {
     createHarness()
     openSettingsTab()
-    expect(actionButton().textContent).toBe('Reset to defaults')
-    expect(actionButton().disabled).toBe(true)
+    expect(resetButton().disabled).toBe(true)
   })
 
   it('puts every setting back', () => {
     const harness = createHarness()
     openSettingsTab()
     fireEvent.change(settingsField('Night'), { target: { value: '90' } })
-    expect(actionButton().disabled).toBe(false)
+    expect(resetButton().disabled).toBe(false)
 
-    fireEvent.click(actionButton())
+    fireEvent.click(resetButton())
 
     expect(harness.settings.current()).toEqual(DEFAULT_SERVICE_SETTINGS)
     expect(settingsField('Night').value).toBe('60')
+  })
+
+  it('puts the settings on every line in the city', () => {
+    const harness = createHarness()
+    openSettingsTab()
+    expect(actionButton().textContent).toBe('Apply to every line')
+
+    fireEvent.click(actionButton())
+
+    expect(harness.applyServiceToAllLines.execute).toHaveBeenCalled()
+    expect(screen.getByText('Applied to 2 lines')).toBeDefined()
+  })
+
+  it('reports a single line in the singular', () => {
+    const harness = createHarness()
+    harness.applyServiceToAllLines.execute.mockReturnValue(1)
+    openSettingsTab()
+    fireEvent.click(actionButton())
+    expect(screen.getByText('Applied to 1 line')).toBeDefined()
+  })
+
+  // With auto trains off the mod provisions nothing, so there is nothing to apply.
+  it('offers nothing to apply while auto trains are off', () => {
+    createHarness()
+    openSettingsTab()
+    fireEvent.click(screen.getByRole('switch'))
+    expect(actionButton().disabled).toBe(true)
+  })
+
+  it('offers nothing to apply in a city with no lines', () => {
+    createHarness(EMPTY_CITY)
+    openSettingsTab()
+    expect(actionButton().disabled).toBe(true)
   })
 
   it('opens on what the player saved last session', () => {
@@ -462,6 +517,98 @@ describe('AutoLinesPanel settings tab', () => {
     fireEvent.click(tab('Extend'))
     expect(actionButton().textContent).toBe('Extend')
     expect(pickers()[0].value).toBe('r1')
+  })
+})
+
+describe('AutoLinesPanel per-line tab', () => {
+  it('offers every line in the city, not just the ones that can grow', () => {
+    createHarness()
+    openPerLineTab()
+    expect(Array.from(pickers()[0].options).map((option) => option.value)).toEqual(['r1', 'r2'])
+  })
+
+  it('opens on the city-wide settings for a line that follows them', () => {
+    createHarness()
+    openPerLineTab()
+    expect(settingsField('Cars per train').value).toBe('10')
+    expect(settingsField('Peak').value).toBe('5')
+    expect(settingsField('Night').value).toBe('60')
+  })
+
+  it('opens on the line’s own service once it has one', () => {
+    new ServiceSettingsStore().save({
+      ...DEFAULT_SERVICE_SETTINGS,
+      serviceByRoute: { r1: { carsPerTrain: 4, headwayMinutes: { midday: 8, night: 20, offPeak: 12, peak: 3 } } },
+    })
+    createHarness()
+    openPerLineTab()
+    expect(settingsField('Cars per train').value).toBe('4')
+    expect(settingsField('Peak').value).toBe('3')
+    expect(screen.getByText(/runs on its own service/)).toBeDefined()
+  })
+
+  it('shows what the line runs today', () => {
+    createHarness(SCHEDULED_CITY)
+    openPerLineTab()
+    // A half-hour round trip at six peak trains is a train every five minutes.
+    expect(screen.getByText(/Today it runs 10-car trains every 5 \/ 15 \/ 30 \/ 30 min/)).toBeDefined()
+  })
+
+  it('has nothing to apply until the player changes something', () => {
+    createHarness()
+    openPerLineTab()
+    expect(actionButton().textContent).toBe('Apply to Line 1')
+    expect(actionButton().disabled).toBe(true)
+  })
+
+  it('puts the line on the service the player typed', () => {
+    const harness = createHarness()
+    openPerLineTab()
+    fireEvent.change(settingsField('Peak'), { target: { value: '3' } })
+    fireEvent.change(settingsField('Cars per train'), { target: { value: '6' } })
+    expect(actionButton().disabled).toBe(false)
+
+    fireEvent.click(actionButton())
+
+    expect(harness.applyLineService.execute).toHaveBeenCalledWith('r1', {
+      carsPerTrain: 6,
+      headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: 3 },
+    })
+    expect(screen.getByText('Line 1 rescheduled')).toBeDefined()
+  })
+
+  it('says so when the game has not timed the line yet', () => {
+    const harness = createHarness()
+    harness.applyLineService.execute.mockReturnValue(false)
+    openPerLineTab()
+    fireEvent.change(settingsField('Peak'), { target: { value: '3' } })
+    fireEvent.click(actionButton())
+    expect(screen.getByText('The game has not timed this line yet.')).toBeDefined()
+  })
+
+  it('drops what was typed when the player picks another line', () => {
+    createHarness()
+    openPerLineTab()
+    fireEvent.change(settingsField('Peak'), { target: { value: '3' } })
+    fireEvent.change(pickers()[0], { target: { value: 'r2' } })
+    expect(settingsField('Peak').value).toBe('5')
+    expect(actionButton().disabled).toBe(true)
+  })
+
+  // The mod provisions nothing while auto trains are off, per-line included.
+  it('applies nothing while auto trains are off', () => {
+    new ServiceSettingsStore().save({ ...DEFAULT_SERVICE_SETTINGS, autoTrains: false })
+    createHarness()
+    openPerLineTab()
+    fireEvent.change(settingsField('Peak'), { target: { value: '3' } })
+    expect(actionButton().disabled).toBe(true)
+  })
+
+  it('says so when the city has no lines', () => {
+    createHarness(EMPTY_CITY)
+    openPerLineTab()
+    expect(screen.getByText('No lines in this city.')).toBeDefined()
+    expect(actionButton().disabled).toBe(true)
   })
 })
 

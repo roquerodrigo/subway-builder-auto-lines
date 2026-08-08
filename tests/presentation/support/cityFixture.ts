@@ -164,4 +164,18 @@ export const TWO_GROWABLE_LINES_CITY: CitySpec = {
   stations: [...CITY.stations, { center: [10, 0], id: 's11', name: 'Kilo' }],
 }
 
+// Line 1 as the game has timed it: a half-hour round trip served by six peak
+// trains — a train every five minutes — down to one at night.
+export const SCHEDULED_CITY: CitySpec = {
+  ...CITY,
+  routes: [
+    {
+      ...LINE_ONE,
+      stComboTimings: [{ departureTime: 900 }, { departureTime: 1800 }],
+      trainSchedule: { highDemand: 6, lowDemand: 1, mediumDemand: 2, veryLowDemand: 1 },
+    },
+    LINE_TWO,
+  ],
+}
+
 export const EMPTY_CITY: CitySpec = { links: [], routes: [], stations: [] }

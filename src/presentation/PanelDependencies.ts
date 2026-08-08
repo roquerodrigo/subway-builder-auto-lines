@@ -1,3 +1,5 @@
+import type { ApplyLineServiceUseCase } from '@/application/ApplyLineServiceUseCase'
+import type { ApplyServiceToAllLinesUseCase } from '@/application/ApplyServiceToAllLinesUseCase'
 import type { CreateNewLineUseCase } from '@/application/CreateNewLineUseCase'
 import type { DiscardNewLinePreviewUseCase } from '@/application/DiscardNewLinePreviewUseCase'
 import type { ExtendLineUseCase } from '@/application/ExtendLineUseCase'
@@ -12,6 +14,8 @@ import type { SubwayBuilderApi } from '@/shared/game/SubwayBuilderApi'
 // presentation layer never reaches into window/store directly.
 export interface PanelDependencies {
   api: SubwayBuilderApi
+  applyLineService: ApplyLineServiceUseCase
+  applyServiceToAllLines: ApplyServiceToAllLinesUseCase
   createNewLine: CreateNewLineUseCase
   discardPreview: DiscardNewLinePreviewUseCase
   extendLine: ExtendLineUseCase
