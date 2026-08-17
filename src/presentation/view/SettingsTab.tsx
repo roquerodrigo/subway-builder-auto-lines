@@ -50,6 +50,19 @@ export function SettingsTab({ canReset, onChange, onReset, settings }: SettingsT
       </div>
 
       <div className="space-y-2">
+        <Toggle
+          checked={settings.sortLinesByName}
+          label="Sort lines by name"
+          onChange={(checked) => onChange({ ...settings, sortLinesByName: checked })}
+        />
+        <div className="text-xs text-muted-foreground">
+          {settings.sortLinesByName ?
+            'The game’s line list is put back in name order whenever the mod changes the network. Lines sharing a colour stay grouped together, as the game groups them.' :
+            'The line list keeps the order you gave it — the mod never reorders it.'}
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trains</div>
         <NumberField
           disabled={off}

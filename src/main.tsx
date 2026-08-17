@@ -5,6 +5,7 @@ import { DiscardNewLinePreviewUseCase } from '@/application/DiscardNewLinePrevie
 import { ExtendLineUseCase } from '@/application/ExtendLineUseCase'
 import { PreviewNewLineUseCase } from '@/application/PreviewNewLineUseCase'
 import { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import { CrossoverInjector } from '@/infrastructure/crossover/CrossoverInjector'
 import { FleetProvisioner } from '@/infrastructure/fleet/FleetProvisioner'
 import { TrainTypeCatalog } from '@/infrastructure/game/TrainTypeCatalog'
@@ -50,11 +51,20 @@ function bootstrap(): void {
   const settings = new ServiceSettingsStore()
 
   const provisionService = new ProvisionServiceUseCase(store, fleet, settings)
-  const applyServiceToAllLines = new ApplyServiceToAllLinesUseCase(store, provisionService)
-  const applyLineService = new ApplyLineServiceUseCase(store, settings, provisionService)
-  const extendLine = new ExtendLineUseCase(store, crossovers, previewEditor, provisionService)
+  const sortLines = new SortLinesUseCase(store, settings)
+  const applyServiceToAllLines = new ApplyServiceToAllLinesUseCase(store, provisionService, sortLines)
+  const applyLineService = new ApplyLineServiceUseCase(store, settings, provisionService, sortLines)
+  const extendLine = new ExtendLineUseCase(store, crossovers, previewEditor, provisionService, sortLines)
   const previewNewLine = new PreviewNewLineUseCase(store)
-  const createNewLine = new CreateNewLineUseCase(store, guard, maintenance, crossovers, previewEditor, provisionService)
+  const createNewLine = new CreateNewLineUseCase(
+    store,
+    guard,
+    maintenance,
+    crossovers,
+    previewEditor,
+    provisionService,
+    sortLines,
+  )
   const discardPreview = new DiscardNewLinePreviewUseCase(store, guard, maintenance)
 
   const panel = createAutoLinesPanel({
@@ -68,6 +78,7 @@ function bootstrap(): void {
     previewNewLine,
     previewOverlay,
     settings,
+    sortLines,
     store,
   })
 

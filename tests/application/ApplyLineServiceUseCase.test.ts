@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { LineService } from '@/domain/settings/ServiceSettings'
 import type { GameState } from '@/shared/game/GameState'
 import type { Route } from '@/shared/game/Route'
@@ -22,14 +23,17 @@ function createFixture(routes: Route[] = [route()]) {
   const state: GameState = { money: 0, ownedTrainCount: 0, routes, tracks: [] }
   const provision = { execute: vi.fn() }
   const settings = new ServiceSettingsStore()
+  const sortLines = { execute: vi.fn() }
 
   return {
     provision,
     settings,
+    sortLines,
     useCase: new ApplyLineServiceUseCase(
       new GameStore({ getState: () => state }),
       settings,
       provision as unknown as ProvisionServiceUseCase,
+      sortLines as unknown as SortLinesUseCase,
     ),
   }
 }
@@ -48,6 +52,13 @@ describe('ApplyLineServiceUseCase', () => {
 
     expect(useCase.execute(ROUTE_ID, OWN_SERVICE)).toBe(true)
     expect(provision.execute).toHaveBeenCalledWith(ROUTE_ID)
+  })
+
+  it('puts the line list back in order', () => {
+    const { sortLines, useCase } = createFixture()
+    useCase.execute(ROUTE_ID, OWN_SERVICE)
+
+    expect(sortLines.execute).toHaveBeenCalled()
   })
 
   // So extending the line later keeps the service the player picked for it.

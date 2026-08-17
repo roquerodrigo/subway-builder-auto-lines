@@ -130,14 +130,26 @@ cycle is read back afterwards: a longer train dwells longer at every stop, so th
 recomputes the round trip from it — and the round trip is what the schedule divides.
 
 Those numbers are **defaults, not constants**: the panel's **Settings** tab writes
-`ServiceSettings` (cars per train, the four headways, an `autoTrains` switch, and
-`serviceByRoute` for lines given their own) through `ServiceSettingsStore` into
-localStorage (`autolines-service-settings`), and `ProvisionServiceUseCase` reads them on
-every run via `ServiceSettingsPolicy.serviceFor(routeId)` — with `autoTrains` off it
-provisions nothing, leaving a built line for the player to service. Everything read back
-is sanitized (`ServiceSettingsPolicy`), and `ServiceSchedule` holds each quieter period
-to the busier one's train count, so headways ordered upside down can't break the game's
+`ServiceSettings` (cars per train, the four headways, an `autoTrains` switch,
+`serviceByRoute` for lines given their own, and a `sortLinesByName` switch) through
+`ServiceSettingsStore` into localStorage (`autolines-service-settings`), and
+`ProvisionServiceUseCase` reads them on every run via
+`ServiceSettingsPolicy.serviceFor(routeId)` — with `autoTrains` off it provisions
+nothing, leaving a built line for the player to service. Everything read back is
+sanitized (`ServiceSettingsPolicy`), and `ServiceSchedule` holds each quieter period to
+the busier one's train count, so headways ordered upside down can't break the game's
 `high >= medium >= low >= veryLow` invariant.
+
+## Sorting the line list
+
+The game's own line list is the `routes` array itself — grouped by colour in
+first-appearance order, ordered by the array within each group — so `setRoutes(sorted,
+false)` is all it takes to sort the panel. `SortLinesUseCase` does that after every
+change the mod makes (build, extend, either service action) and the moment the switch
+is flipped, while `LineOrder` decides the order: by `fullName`, falling back to the
+bullet, through a **numeric** collator so "Line 9" precedes "Line 10". Temp routes keep
+to the end. On by default (`sortLinesByName`), and a no-op when the list is already in
+order, since reordering writes the whole array back. See game-internals.md §5.
 
 The panel's other two service entry points are thin: `ApplyServiceToAllLinesUseCase`
 runs the provisioning over every real route (Settings → "Apply to every line"), and

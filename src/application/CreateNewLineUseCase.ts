@@ -1,4 +1,5 @@
 import type { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { CrossoverInjector } from '@/infrastructure/crossover/CrossoverInjector'
 import type { RouteEditGuard } from '@/infrastructure/routing/RouteEditGuard'
 import type { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
@@ -27,6 +28,7 @@ export class CreateNewLineUseCase {
     private readonly crossovers: CrossoverInjector,
     private readonly previewEditor: RoutePreviewEditor,
     private readonly provisionService: ProvisionServiceUseCase,
+    private readonly sortLines: SortLinesUseCase,
   ) {}
 
   async execute(path: string[], color?: string): Promise<boolean> {
@@ -108,6 +110,7 @@ export class CreateNewLineUseCase {
 
       this.maintenance.stripTempRoutes()
       this.provisionService.execute(routeId) // trains + 5/10/15/30-min schedule
+      this.sortLines.execute()
 
       return true
     } catch (error) {

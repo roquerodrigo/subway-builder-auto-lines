@@ -16,6 +16,7 @@ describe('DEFAULT_SERVICE_SETTINGS', () => {
       carsPerTrain: 10,
       headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: 5 },
       serviceByRoute: {},
+      sortLinesByName: true,
     })
   })
 })
@@ -27,6 +28,7 @@ describe('ServiceSettingsPolicy.sanitize', () => {
       carsPerTrain: 6,
       headwayMinutes: { midday: 12, night: 45, offPeak: 20, peak: 4 },
       serviceByRoute: { 'route-1': { carsPerTrain: 6, headwayMinutes: { midday: 8, night: 20, offPeak: 12, peak: 3 } } },
+      sortLinesByName: false,
     }
 
     expect(ServiceSettingsPolicy.sanitize(settings)).toEqual(settings)
@@ -46,6 +48,7 @@ describe('ServiceSettingsPolicy.sanitize', () => {
       carsPerTrain: 8,
       headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: 3 },
       serviceByRoute: {},
+      sortLinesByName: true,
     })
   })
 

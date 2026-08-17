@@ -1,4 +1,5 @@
 import type { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { GameStore } from '@/infrastructure/store/GameStore'
 
 // Brings every line in the city onto the current settings — the same service a
@@ -8,6 +9,7 @@ export class ApplyServiceToAllLinesUseCase {
   constructor(
     private readonly store: GameStore,
     private readonly provisionService: ProvisionServiceUseCase,
+    private readonly sortLines: SortLinesUseCase,
   ) {}
 
   execute(): number {
@@ -15,6 +17,7 @@ export class ApplyServiceToAllLinesUseCase {
     for (const route of routes) {
       this.provisionService.execute(route.id)
     }
+    this.sortLines.execute()
 
     return routes.length
   }

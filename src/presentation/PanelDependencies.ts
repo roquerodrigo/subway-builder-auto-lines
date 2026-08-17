@@ -4,6 +4,7 @@ import type { CreateNewLineUseCase } from '@/application/CreateNewLineUseCase'
 import type { DiscardNewLinePreviewUseCase } from '@/application/DiscardNewLinePreviewUseCase'
 import type { ExtendLineUseCase } from '@/application/ExtendLineUseCase'
 import type { PreviewNewLineUseCase } from '@/application/PreviewNewLineUseCase'
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { PreviewMapOverlay } from '@/infrastructure/map/PreviewMapOverlay'
 import type { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
 import type { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
@@ -23,5 +24,6 @@ export interface PanelDependencies {
   previewNewLine: PreviewNewLineUseCase
   previewOverlay: PreviewMapOverlay
   settings: ServiceSettingsStore
+  sortLines: SortLinesUseCase
   store: GameStore
 }

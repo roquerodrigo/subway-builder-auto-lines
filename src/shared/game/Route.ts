@@ -3,12 +3,14 @@ import type { StationNode } from '@/shared/game/StationNode'
 import type { TrainSchedule } from '@/shared/game/TrainSchedule'
 
 // A line/route. `tempParentId` marks a preview/temp route (dropped by cleanup);
-// `bullet` is the line label (this mod assigns sequential numbers); `shape` is the
+// `bullet` is the line label (this mod assigns sequential numbers); `fullName` is
+// the name the game shows for it, falling back to the bullet; `shape` is the
 // bullet icon shape (this mod creates lines as squares).
 export interface Route {
   bullet?: string
   carsPerTrain?: number
   color?: string
+  fullName?: string
   id: string
   shape?: RouteShape
   stComboTimings?: StComboTiming[]
