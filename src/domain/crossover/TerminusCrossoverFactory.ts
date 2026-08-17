@@ -1,10 +1,13 @@
+import type { TerminusCrossover } from '@/domain/crossover/TerminusCrossover'
 import type { StationIndex } from '@/domain/network/StationIndex'
 import type { Coordinate } from '@/shared/game/Coordinate'
 import type { GameState } from '@/shared/game/GameState'
 import type { Track } from '@/shared/game/Track'
 
 import { TrackNetwork } from '@/domain/network/TrackNetwork'
+import { TrackGroupFactory } from '@/domain/track/TrackGroupFactory'
 import { DEFAULT_TRAIN_TYPE } from '@/shared/game/constants'
+import { UniqueId } from '@/shared/UniqueId'
 
 const CROSSOVER_TYPE = 'scissors-crossover'
 const CROSSOVER_CONSTRUCTION = 'constructed'
@@ -15,11 +18,11 @@ interface FarEnd {
   trackType: string | undefined
 }
 
-// Builds the terminus turnaround edge. Game 1.4.10 gates auto-crossovers behind a
-// Settings toggle that ships OFF, so a freshly-drawn station has no reversal edge
-// and a route's turnaround path fails. This fabricates a reversable scissors-
-// crossover joining a terminus station's two platform tracks at their far-from-
-// neighbor ends. Returns the track to inject, or null if impossible / already
+// Builds the terminus turnaround edge. Auto-crossovers sit behind a Settings
+// toggle, so a freshly-drawn station can have no reversal edge at all, and then a
+// route's turnaround path fails. This fabricates a reversable scissors-crossover
+// joining a terminus station's two platform tracks at their far-from-neighbor
+// ends, plus the track group that owns it. Returns null if impossible / already
 // linked (so injecting it is a safe no-op when a crossover already exists).
 export class TerminusCrossoverFactory {
   static create(
@@ -27,7 +30,7 @@ export class TerminusCrossoverFactory {
     index: StationIndex,
     terminusStationId: string,
     neighborStationId: string,
-  ): null | Track {
+  ): null | TerminusCrossover {
     const station = index.stationById.get(terminusStationId)
     const neighbor = index.stationById.get(neighborStationId)
     if (!station || !neighbor) {
@@ -80,18 +83,13 @@ export class TerminusCrossoverFactory {
     } // already linked
 
     const distance = TrackNetwork.distance(c1, c2)
-    const uid =
-      typeof crypto !== 'undefined' && crypto.randomUUID ?
-          crypto.randomUUID() :
-        'xover-' + Date.now() + '-' + Math.floor(distance * 1000)
-
-    return {
+    const track: Track = {
       buildType: CROSSOVER_CONSTRUCTION,
       coords: [c1, c2],
       createdAt: Date.now(),
       displayType: CROSSOVER_CONSTRUCTION,
       endElevation: fars[1].elevation ?? 0,
-      id: uid,
+      id: UniqueId.create('xover'),
       interactable: false,
       length: Math.max(1, distance),
       reversable: true,
@@ -100,5 +98,7 @@ export class TerminusCrossoverFactory {
       type: CROSSOVER_TYPE,
       waterIntersectionPercentage: 0,
     }
+
+    return { group: TrackGroupFactory.own(track), track }
   }
 }

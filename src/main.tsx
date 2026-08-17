@@ -12,6 +12,7 @@ import { PreviewMapOverlay } from '@/infrastructure/map/PreviewMapOverlay'
 import { RouteEditGuard } from '@/infrastructure/routing/RouteEditGuard'
 import { RouteMaintenance } from '@/infrastructure/routing/RouteMaintenance'
 import { RoutePreviewEditor } from '@/infrastructure/routing/RoutePreviewEditor'
+import { OrphanTrackRescue } from '@/infrastructure/save/OrphanTrackRescue'
 import { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import { GameStore } from '@/infrastructure/store/GameStore'
 import { FloatingPanelRegistrar } from '@/infrastructure/ui/FloatingPanelRegistrar'
@@ -36,6 +37,9 @@ function bootstrap(): void {
   }
 
   const store = new GameStore(storeCallbacks)
+  // Before anything else: the city is loaded after the mods are, so this still
+  // gets to fix up a save whose crossovers an older version left unowned.
+  new OrphanTrackRescue(store).install()
   const catalog = new TrainTypeCatalog(api)
   const guard = new RouteEditGuard()
   const maintenance = new RouteMaintenance(store)

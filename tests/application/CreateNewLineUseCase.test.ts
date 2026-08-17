@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { TerminusCrossover } from '@/domain/crossover/TerminusCrossover'
 import type { GameState } from '@/shared/game/GameState'
 import type { Route } from '@/shared/game/Route'
 import type { StationNode } from '@/shared/game/StationNode'
 import type { SetTracksArg, Track } from '@/shared/game/Track'
+import type { TrackGroup } from '@/shared/game/TrackGroup'
 
 import { CreateNewLineUseCase } from '@/application/CreateNewLineUseCase'
 import { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
@@ -157,7 +159,15 @@ function createFixture() {
   }
 }
 
-function crossover(id: string): Track {
+function crossover(id: string): TerminusCrossover {
+  return { group: crossoverGroup(id), track: crossoverTrack(id) }
+}
+
+function crossoverGroup(id: string): TrackGroup {
+  return { centerLine: [[0, 0], [0, 1]], id: id + '-group', trackIds: [id], type: 'scissors-crossover' }
+}
+
+function crossoverTrack(id: string): Track {
   return { coords: [[0, 0], [0, 1]], id, reversable: true, type: 'scissors-crossover' }
 }
 
@@ -313,7 +323,7 @@ describe('CreateNewLineUseCase', () => {
         .mockReturnValueOnce(crossover('end'))
       await useCase.execute(['a', 'b', 'c'])
       expect(setTracks).toHaveBeenCalledWith({
-        newTracks: [...existing, crossover('start'), crossover('end')],
+        newTracks: [...existing, crossoverTrack('start'), crossoverTrack('end')],
         regenRoutesWithTrackIDs: [],
         regenStations: false,
       })

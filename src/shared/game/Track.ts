@@ -1,7 +1,10 @@
 import type { Coordinate } from '@/shared/game/Coordinate'
+import type { TrackGroup } from '@/shared/game/TrackGroup'
 
 // Argument shape for setTracks (regenStations:false preserves station-node ids).
+// Omitting newTrackGroups leaves the groups the game already holds untouched.
 export interface SetTracksArg {
+  newTrackGroups?: TrackGroup[]
   newTracks: Track[]
   regenRoutesWithTrackIDs: string[]
   regenStations: boolean

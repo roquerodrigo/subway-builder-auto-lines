@@ -4,6 +4,7 @@ import type { Coordinate } from '@/shared/game/Coordinate'
 import type { GameState } from '@/shared/game/GameState'
 import type { StationNode } from '@/shared/game/StationNode'
 import type { Track, TrackGraphEdge } from '@/shared/game/Track'
+import type { TrackGroup } from '@/shared/game/TrackGroup'
 
 import { TerminusCrossoverFactory } from '@/domain/crossover/TerminusCrossoverFactory'
 import { StationIndex } from '@/domain/network/StationIndex'
@@ -23,7 +24,11 @@ interface TerminusSpec {
 }
 
 function crossoverFor(state: GameState, terminus = 'terminus', neighbor = 'neighbor'): null | Track {
-  return TerminusCrossoverFactory.create(state, StationIndex.build(state), terminus, neighbor)
+  return TerminusCrossoverFactory.create(state, StationIndex.build(state), terminus, neighbor)?.track ?? null
+}
+
+function groupFor(state: GameState): null | TrackGroup {
+  return TerminusCrossoverFactory.create(state, StationIndex.build(state), 'terminus', 'neighbor')?.group ?? null
 }
 
 // A terminus station at the origin with two platform tracks running east–west, and
@@ -205,8 +210,7 @@ describe('TerminusCrossoverFactory.create', () => {
   it('gives every crossover its own id', () => {
     let issued = 0
     vi.stubGlobal('crypto', { randomUUID: (): string => 'uuid-' + issued++ })
-    expect(crossoverFor(terminusState())?.id).toBe('uuid-0')
-    expect(crossoverFor(terminusState())?.id).toBe('uuid-1')
+    expect(crossoverFor(terminusState())?.id).not.toBe(crossoverFor(terminusState())?.id)
   })
 
   it('falls back to a generated id where the platform has no crypto', () => {
@@ -219,5 +223,39 @@ describe('TerminusCrossoverFactory.create', () => {
   it('stamps the moment it was built', () => {
     const now = Date.now()
     expect(crossoverFor(terminusState())?.createdAt).toBeGreaterThanOrEqual(now)
+  })
+})
+
+// Loading a save deletes every track no track group lists, and drops the routes
+// that ran over it — so the diagonal ships with the group that owns it.
+describe('the track group a terminus crossover comes with', () => {
+  it('owns the diagonal and nothing else', () => {
+    const state = terminusState()
+    const crossover = TerminusCrossoverFactory.create(state, StationIndex.build(state), 'terminus', 'neighbor')
+    expect(crossover?.group.trackIds).toEqual([crossover?.track.id])
+  })
+
+  it('is a scissors crossover of the same track type', () => {
+    const group = groupFor(terminusState({ trackType: 'light-rail' }))
+    expect(group?.type).toBe('scissors-crossover')
+    expect(group?.trackLanesType).toBe('parallel')
+    expect(group?.trackType).toBe('light-rail')
+  })
+
+  it('runs along the diagonal it owns', () => {
+    const state = terminusState()
+    const crossover = TerminusCrossoverFactory.create(state, StationIndex.build(state), 'terminus', 'neighbor')
+    expect(crossover?.group.centerLine).toEqual(crossover?.track.coords)
+  })
+
+  it('has an id of its own', () => {
+    const state = terminusState()
+    const crossover = TerminusCrossoverFactory.create(state, StationIndex.build(state), 'terminus', 'neighbor')
+    expect(crossover?.group.id).not.toBe(crossover?.track.id)
+  })
+
+  it('falls back to a generated id where the platform has no crypto', () => {
+    vi.stubGlobal('crypto', undefined)
+    expect(groupFor(terminusState())?.id).toMatch(/^track-group-/)
   })
 })

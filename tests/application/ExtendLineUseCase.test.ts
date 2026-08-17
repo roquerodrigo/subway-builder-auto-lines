@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { TerminusCrossover } from '@/domain/crossover/TerminusCrossover'
 import type { Endpoint, ForkOption } from '@/domain/line/ExpansionPlan'
 import type { GameState } from '@/shared/game/GameState'
 import type { SetTracksArg, Track } from '@/shared/game/Track'
@@ -55,7 +56,14 @@ function createFixture() {
   }
 }
 
-function crossover(id: string): Track {
+function crossover(id: string): TerminusCrossover {
+  return {
+    group: { centerLine: [[0, 0], [0, 1]], id: id + '-group', trackIds: [id], type: 'scissors-crossover' },
+    track: crossoverTrack(id),
+  }
+}
+
+function crossoverTrack(id: string): Track {
   return { coords: [[0, 0], [0, 1]], id, reversable: true, type: 'scissors-crossover' }
 }
 
@@ -214,11 +222,11 @@ describe('ExtendLineUseCase', () => {
 
     it('writes the fabricated crossovers into the game alongside the existing tracks', async () => {
       const { plan, setTracks, state, useCase } = createFixture()
-      state.tracks = [crossover('existing')]
+      state.tracks = [crossoverTrack('existing')]
       const growable = endpoint({ autoStationIds: ['B'], autoStationNodeIds: ['B-node'] })
       await useCase.execute(ROUTE_ID, plan([growable]), {})
       expect(setTracks).toHaveBeenCalledWith({
-        newTracks: [crossover('existing'), crossover('crossover-1')],
+        newTracks: [crossoverTrack('existing'), crossoverTrack('crossover-1')],
         regenRoutesWithTrackIDs: [],
         regenStations: false,
       })

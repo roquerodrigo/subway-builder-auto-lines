@@ -1,8 +1,10 @@
 import type { PreviewRouteAction } from '@/shared/game/PreviewRouteAction'
 import type { Route } from '@/shared/game/Route'
+import type { SaveFile } from '@/shared/game/SaveFile'
 import type { Station } from '@/shared/game/Station'
 import type { StationNode } from '@/shared/game/StationNode'
 import type { SetTracksArg, Track, TrackGraph } from '@/shared/game/Track'
+import type { TrackGroup } from '@/shared/game/TrackGroup'
 import type { Train } from '@/shared/game/Train'
 
 // The internal store snapshot (window.__subwayBuilder_storeCallbacks__.getState()).
@@ -17,6 +19,8 @@ export interface GameState {
   deleteRoute?(routeId: string): void
   generateRoute?(options: Record<string, unknown>): Route
   generateTrain?(routeId: string): void
+  // ---- saves ----
+  loadSave?(save: SaveFile): unknown
   money: number
   ownedCarsByType?: Record<string, number>
   ownedTrainCount: number
@@ -41,6 +45,7 @@ export interface GameState {
   stNodes?: StationNode[]
   timeConfig?: { elapsedSeconds?: number }
   trackGraph?: TrackGraph
+  trackGroups?: TrackGroup[]
   tracks: Track[]
   trains?: Train[]
   updateRouteProperty?(routeId: string, key: string, value: unknown): void

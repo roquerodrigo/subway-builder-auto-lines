@@ -76,6 +76,14 @@ recalculateAllRouteGeojsons, togglePause, …`
   `type:"station"` for platforms, `null` for plain running track.
 - `trackGroup = { id, trackIds, trackLanesType, centerLine, type, trackType }`;
   `type ∈ { "station", "scissors-crossover", null }`.
+- **A group owns its tracks, and 1.6.0 enforces it on load.** `loadSave` runs
+  `removeOrphanTracks(tracks, trackGroups)` first: every track no group lists is
+  deleted (`Removing N orphan track(s) with no track group`), and
+  `validateRoutesAndTrains` then **drops each route that ran over one**, plus its
+  trains (`Found routes with missing tracks during save load` /
+  `Dropped N train(s) with no valid route`). A track written straight into
+  `state.tracks` therefore survives only until the city is reopened — and takes the
+  line with it. Write the group alongside it (§7).
 
 ---
 
@@ -142,6 +150,9 @@ textColor, idealTrainCount, shape, trainType, carsPerTrain, createdAt, trainSche
   entry). The game auto-respawns to the schedule, so a purged train is replaced.
 - The game **autosaves** — any broken/half-built state (empty ghost routes,
   orphaned trains, partial lines) gets persisted. Never leave the game broken.
+- **A track that no trackGroup lists is deleted on the next save load**, and every
+  route running over it is dropped with it (§4). Whatever the mod writes into
+  `state.tracks` needs a group written with it.
 - An uncommitted `generateRoute` route (0 stNodes) can be autosaved as a ghost;
   strip routes with 0 `stNodes`.
 
@@ -180,17 +191,29 @@ outbound track, so the route's turnaround path fails ("No valid path…").
   existing track endpoints. A straight 2-point diagonal is enough (bezier is
   cosmetic). The endpoints must match coord-for-coord so `coordKey` collides.
 - **Fabricate + inject** (no public/`addCrossover` API; the native tool calls
-  `electronAPI.buildBlueprints` in the main process):
+  `electronAPI.buildBlueprints` in the main process). The diagonal goes in with a
+  **trackGroup that lists it** — a track no group owns is deleted on the next save
+  load, along with the line built over it (§4):
   ```js
   store.getState().setTracks({
     newTracks: [...tracks, diag],   // diag = {id:uuid, coords:[c1,c2], type:"scissors-crossover",
                                     //         reversable:true, interactable:false, length, ...}
+    newTrackGroups: [...trackGroups, // {id:uuid, trackIds:[diag.id], centerLine:diag.coords,
+      group],                        //  type:"scissors-crossover", trackLanesType:"parallel", trackType}
     regenStations: false,           // preserve stNode ids
     regenRoutesWithTrackIDs: [],
   });
   // setTracks rebuilds the whole trackGraph (+ derives stNodes, signals).
   ```
-  Inject **before** the route's turnaround path is built.
+  Inject **before** the route's turnaround path is built. A group holding the single
+  diagonal is enough — the game's own crossover instead appends its two diagonals to
+  the *adjacent* parallel group and retypes it `scissors-crossover`
+  (`makeNewScissorsCrossover`), but nothing reads the group's shape back.
+- A save already broken this way is repairable: the tracks are still in the file,
+  so wrapping `loadSave` and giving every unowned track a group before the game
+  reads it brings the dropped lines back (`OrphanTrackRescue`). Verified live on a
+  1.6.0 save whose line had vanished: `adopted 2 orphan track(s)` and the line
+  loaded with its nine trains.
 - This mod's rule for a single terminus station + neighbor: take the station's two
   platform tracks, pick each one's endpoint **farthest from the neighbor** (the
   dead-end side), connect those two with a reversable diagonal. (`terminusCrossoverDiag`.)

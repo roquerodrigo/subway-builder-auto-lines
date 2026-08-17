@@ -5,7 +5,7 @@ Guidance for working in this repo.
 ## What this is
 
 A **TypeScript** mod for [Subway Builder](https://www.subwaybuilder.com) (tested
-against game 1.4.10) that automates line building: **extend** an existing line
+against game 1.6.0) that automates line building: **extend** an existing line
 along its corridor, or create a **new line** from stations that have none — with
 demand-based trains. Authored as a small **DDD** codebase under `src/` and
 **bundled by esbuild into one IIFE** (`dist/index.js`) — the single file the game
@@ -103,6 +103,16 @@ gates auto-placement behind a Settings toggle ("Auto Crossover") that ships OFF*
 leaving fresh stations with no turnaround edge (route build fails "No valid path").
 `TerminusCrossoverFactory` + `CrossoverInjector` fabricate them; injection is a
 no-op where one already exists (dedup by far-end linkage). See game-internals.md §7.
+
+> ### ⚠️ Every track needs a **trackGroup** that owns it, or the line dies on the next load
+> Loading a save runs `removeOrphanTracks` first: a track no group lists is deleted,
+> and `validateRoutesAndTrains` then drops every route that ran over it, trains and
+> all. So `TerminusCrossoverFactory` returns a `TerminusCrossover` — the diagonal
+> **and** the `TrackGroupFactory.own` group — and `CrossoverInjector` passes both
+> (`newTracks` + `newTrackGroups`). `OrphanTrackRescue`, installed on the store's
+> `loadSave` at bootstrap, repairs saves already broken this way: the tracks are
+> still in the file, so adopting the unowned ones into groups on the way in brings
+> the vanished lines back. See game-internals.md §4/§7.
 
 Cars are the real budget: the game gates "add a train" / "increase cars per train"
 on `ownedCarsByType[type]`, not the train cap. `FleetProvisioner.ensureCarInventory`
