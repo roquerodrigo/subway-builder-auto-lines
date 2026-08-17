@@ -1,6 +1,7 @@
 // What the player can tune from the panel: whether the mod provisions trains at
-// all, how long the trains it puts on a line are, and how often each demand period
-// is served — city-wide, and per line for the ones that want their own service.
+// all, how long the trains it puts on a line are, how often each demand period is
+// served — city-wide, and per line for the ones that want their own service — and
+// whether the game's line list is kept sorted by name.
 // Everything here is player input — sanitize before use, since it ends up written
 // straight into the game's routes.
 export interface HeadwayMinutes {
@@ -22,6 +23,7 @@ export interface ServiceSettings {
   carsPerTrain: number
   headwayMinutes: HeadwayMinutes
   serviceByRoute: Record<string, LineService>
+  sortLinesByName: boolean
 }
 
 export const DEFAULT_SERVICE_SETTINGS: ServiceSettings = {
@@ -29,6 +31,7 @@ export const DEFAULT_SERVICE_SETTINGS: ServiceSettings = {
   carsPerTrain: 10,
   headwayMinutes: { midday: 15, night: 60, offPeak: 30, peak: 5 },
   serviceByRoute: {},
+  sortLinesByName: true,
 }
 
 export const MIN_CARS_PER_TRAIN = 1
@@ -48,6 +51,7 @@ export class ServiceSettingsPolicy {
     return (
       settings.autoTrains === DEFAULT_SERVICE_SETTINGS.autoTrains &&
       settings.carsPerTrain === DEFAULT_SERVICE_SETTINGS.carsPerTrain &&
+      settings.sortLinesByName === DEFAULT_SERVICE_SETTINGS.sortLinesByName &&
       sameHeadways(settings.headwayMinutes, DEFAULT_SERVICE_SETTINGS.headwayMinutes) &&
       Object.keys(settings.serviceByRoute).length === 0
     )
@@ -86,6 +90,10 @@ export class ServiceSettingsPolicy {
       carsPerTrain: cityWide.carsPerTrain,
       headwayMinutes: cityWide.headwayMinutes,
       serviceByRoute: sanitizeByRoute(source.serviceByRoute, cityWide),
+      sortLinesByName:
+        typeof source.sortLinesByName === 'boolean' ?
+          source.sortLinesByName :
+          DEFAULT_SERVICE_SETTINGS.sortLinesByName,
     }
   }
 

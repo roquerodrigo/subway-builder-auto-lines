@@ -104,9 +104,18 @@ textColor, idealTrainCount, shape, trainType, carsPerTrain, createdAt, trainSche
 - `bullet` is auto-assigned **letters** by `generateRoute` (it **ignores
   `customBullet`**). To force a value, replace the route via `setRoutes`:
   `setRoutes(routes.map(r => r.id===id ? {...r, bullet} : r), false)`.
+- `fullName` is the name the game's own list shows for the line, falling back to
+  `bullet + " Train"` (`FullNameRouteLabel`). Lines drawn by hand carry one; a line
+  the mod builds has only its bullet.
 - `idealTrainCount` is legacy/hint (default 0); the live train target is computed
   from `trainSchedule` (§8).
 - Preview/temp routes have `tempParentId != null`.
+- **The game's line list is just the routes array.** `RouteListPanelContent` renders
+  `buildColorGroups(routes)`: lines are bucketed by `color` in **first-appearance**
+  order, and follow the array within each bucket. Its drag-and-drop reorders by
+  writing the array back with `setRoutes(reordered, false)` — which is all it takes
+  to sort the panel (`SortLinesUseCase`). Lines sharing a colour stay in one bucket,
+  so the visible order is strictly by name only when the colours are distinct.
 
 ### Building / editing a route (the route builders are module-private)
 1. `generateRoute({})` → adds an **empty** route to `state.routes` (auto letter bullet).

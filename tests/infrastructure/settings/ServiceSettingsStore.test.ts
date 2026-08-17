@@ -13,6 +13,7 @@ const CUSTOM_SETTINGS: ServiceSettings = {
   carsPerTrain: 6,
   headwayMinutes: { midday: 12, night: 45, offPeak: 20, peak: 4 },
   serviceByRoute: { 'route-1': { carsPerTrain: 6, headwayMinutes: { midday: 8, night: 20, offPeak: 12, peak: 3 } } },
+  sortLinesByName: false,
 }
 
 beforeEach(() => {

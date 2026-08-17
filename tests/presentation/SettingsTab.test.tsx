@@ -26,10 +26,14 @@ function renderTab(settings: Partial<ServiceSettings> = {}, canReset = true) {
   return { onChange, onReset, view }
 }
 
+function toggle(label: string): HTMLElement {
+  return screen.getByRole('switch', { name: label })
+}
+
 describe('SettingsTab', () => {
   it('shows the service the mod is set to provision', () => {
     renderTab()
-    expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true')
+    expect(toggle('Auto trains').getAttribute('aria-checked')).toBe('true')
     expect(field('Cars per train').value).toBe('10')
     expect(field('Peak').value).toBe('5')
     expect(field('Midday').value).toBe('15')
@@ -39,14 +43,31 @@ describe('SettingsTab', () => {
 
   it('switches auto trains off', () => {
     const { onChange } = renderTab()
-    fireEvent.click(screen.getByRole('switch'))
+    fireEvent.click(toggle('Auto trains'))
     expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_SERVICE_SETTINGS, autoTrains: false })
   })
 
   it('switches auto trains back on', () => {
     const { onChange } = renderTab({ autoTrains: false })
-    fireEvent.click(screen.getByRole('switch'))
+    fireEvent.click(toggle('Auto trains'))
     expect(onChange).toHaveBeenCalledWith(DEFAULT_SERVICE_SETTINGS)
+  })
+
+  it('switches sorting the line list off', () => {
+    const { onChange } = renderTab()
+    fireEvent.click(toggle('Sort lines by name'))
+    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_SERVICE_SETTINGS, sortLinesByName: false })
+  })
+
+  it('switches sorting the line list back on', () => {
+    const { onChange } = renderTab({ sortLinesByName: false })
+    fireEvent.click(toggle('Sort lines by name'))
+    expect(onChange).toHaveBeenCalledWith(DEFAULT_SERVICE_SETTINGS)
+  })
+
+  it('says what leaving the line list alone means', () => {
+    renderTab({ sortLinesByName: false })
+    expect(screen.getByText(/keeps the order you gave it/)).toBeDefined()
   })
 
   it('says what switching auto trains off leaves the player to do', () => {

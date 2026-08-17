@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { TerminusCrossover } from '@/domain/crossover/TerminusCrossover'
 import type { GameState } from '@/shared/game/GameState'
 import type { Route } from '@/shared/game/Route'
@@ -136,6 +137,7 @@ function createFixture() {
   const previewEditor = new RoutePreviewEditor(store, guard, maintenance)
   const provisionService = new ProvisionServiceUseCase(store, new FleetProvisioner(store, new TrainTypeCatalog({})), new ServiceSettingsStore())
   const provision = vi.spyOn(provisionService, 'execute').mockImplementation(() => {})
+  const sortLines = { execute: vi.fn() }
   const useCase = new CreateNewLineUseCase(
     store,
     guard,
@@ -143,6 +145,7 @@ function createFixture() {
     new CrossoverInjector(store),
     previewEditor,
     provisionService,
+    sortLines as unknown as SortLinesUseCase,
   )
 
   return {
@@ -154,6 +157,7 @@ function createFixture() {
     provision,
     setPreviewRoute,
     setTracks,
+    sortLines,
     state,
     useCase,
   }
@@ -229,6 +233,14 @@ describe('CreateNewLineUseCase', () => {
       await useCase.execute(['a', 'b', 'c'])
       expect(provision).toHaveBeenCalledWith(ROUTE_ID)
     })
+
+    // The new line lands at the end of the game's list; sorting files it where its
+    // name belongs (and does nothing unless the player asked for it).
+    it('puts the line list back in order', async () => {
+      const { sortLines, useCase } = createFixture()
+      await useCase.execute(['a', 'b', 'c'])
+      expect(sortLines.execute).toHaveBeenCalled()
+    })
   })
 
   // confirmRouteChange sits behind a licence gate that silently no-ops
@@ -251,6 +263,12 @@ describe('CreateNewLineUseCase', () => {
       const { provision, useCase } = refusingFixture()
       await useCase.execute(['a', 'b', 'c'])
       expect(provision).not.toHaveBeenCalled()
+    })
+
+    it('leaves the line list in the order it was', async () => {
+      const { sortLines, useCase } = refusingFixture()
+      await useCase.execute(['a', 'b', 'c'])
+      expect(sortLines.execute).not.toHaveBeenCalled()
     })
 
     // A preview left open with the guard released is what pops the game's

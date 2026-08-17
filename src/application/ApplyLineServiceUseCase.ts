@@ -1,4 +1,5 @@
 import type { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { LineService } from '@/domain/settings/ServiceSettings'
 import type { ServiceSettingsStore } from '@/infrastructure/settings/ServiceSettingsStore'
 import type { GameStore } from '@/infrastructure/store/GameStore'
@@ -15,6 +16,7 @@ export class ApplyLineServiceUseCase {
     private readonly store: GameStore,
     private readonly settings: ServiceSettingsStore,
     private readonly provisionService: ProvisionServiceUseCase,
+    private readonly sortLines: SortLinesUseCase,
   ) {}
 
   execute(routeId: string, service: LineService): boolean {
@@ -32,6 +34,7 @@ export class ApplyLineServiceUseCase {
         return false // the game has not timed this line yet — nothing to divide
       }
       this.provisionService.execute(routeId)
+      this.sortLines.execute()
 
       return true
     } catch (error) {

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { TerminusCrossover } from '@/domain/crossover/TerminusCrossover'
 import type { Endpoint, ForkOption } from '@/domain/line/ExpansionPlan'
 import type { GameState } from '@/shared/game/GameState'
@@ -42,6 +43,7 @@ function createFixture() {
   const provisionService = new ProvisionServiceUseCase(store, new FleetProvisioner(store, new TrainTypeCatalog({})), new ServiceSettingsStore())
   const provision = vi.spyOn(provisionService, 'execute').mockImplementation(() => {})
   const createCrossover = vi.spyOn(TerminusCrossoverFactory, 'create').mockReturnValue(crossover('crossover-1'))
+  const sortLines = { execute: vi.fn() }
   const index = StationIndex.build(state)
 
   return {
@@ -51,8 +53,15 @@ function createFixture() {
     plan: (endpoints: Endpoint[]) => new ExpansionPlan(index, new Set(), new Set(), endpoints),
     provision,
     setTracks,
+    sortLines,
     state,
-    useCase: new ExtendLineUseCase(store, new CrossoverInjector(store), previewEditor, provisionService),
+    useCase: new ExtendLineUseCase(
+      store,
+      new CrossoverInjector(store),
+      previewEditor,
+      provisionService,
+      sortLines as unknown as SortLinesUseCase,
+    ),
   }
 }
 
@@ -145,6 +154,13 @@ describe('ExtendLineUseCase', () => {
   })
 
   describe('service', () => {
+    it('puts the line list back in order', async () => {
+      const { plan, sortLines, useCase } = createFixture()
+      await useCase.execute(ROUTE_ID, plan([endpoint({ autoStationIds: ['s2'], autoStationNodeIds: ['n2'] })]), {})
+
+      expect(sortLines.execute).toHaveBeenCalled()
+    })
+
     it('provisions demand-based service on the line it grew', async () => {
       const { plan, provision, useCase } = createFixture()
       const growable = endpoint({ autoStationIds: ['B'], autoStationNodeIds: ['B-node'] })

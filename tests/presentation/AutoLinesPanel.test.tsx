@@ -53,6 +53,7 @@ function createHarness(spec: CitySpec = CITY) {
   const applyLineService = { execute: vi.fn(() => true) }
   const extendLine = { execute: vi.fn(() => Promise.resolve({ committed: true, hadAdditions: true })) }
   const createNewLine = { execute: vi.fn(() => Promise.resolve(true)) }
+  const sortLines = { execute: vi.fn() }
   const discardPreview = { execute: vi.fn() }
   const previewNewLine = {
     execute: vi.fn(
@@ -77,6 +78,7 @@ function createHarness(spec: CitySpec = CITY) {
     previewNewLine,
     previewOverlay,
     settings,
+    sortLines,
     store: { state: () => state },
   }
   const AutoLinesPanel = createAutoLinesPanel(dependencies as unknown as PanelDependencies)
@@ -99,6 +101,7 @@ function createHarness(spec: CitySpec = CITY) {
     },
     settings,
     showNotification,
+    sortLines,
     // Reshapes what the next preview reports, so a test can drive a corridor that
     // forks (or one that cannot form a line) without a bespoke city.
     useCorridor: (next: NewLineCorridor): void => {
@@ -138,6 +141,10 @@ function resetButton(): HTMLButtonElement {
 
 function settingsField(label: string): HTMLInputElement {
   return screen.getByText(label).parentElement?.querySelector('input') as HTMLInputElement
+}
+
+function settingsToggle(label: string): HTMLElement {
+  return screen.getByRole('switch', { name: label })
 }
 
 function tab(name: string): HTMLElement {
@@ -426,7 +433,7 @@ describe('AutoLinesPanel settings tab', () => {
   it('shows the service the mod is set to provision', () => {
     createHarness()
     openSettingsTab()
-    expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true')
+    expect(settingsToggle('Auto trains').getAttribute('aria-checked')).toBe('true')
     expect(settingsField('Cars per train').value).toBe('10')
     expect(settingsField('Peak').value).toBe('5')
   })
@@ -442,8 +449,20 @@ describe('AutoLinesPanel settings tab', () => {
   it('switches the trains off for every line the mod builds', () => {
     const harness = createHarness()
     openSettingsTab()
-    fireEvent.click(screen.getByRole('switch'))
+    fireEvent.click(settingsToggle('Auto trains'))
     expect(harness.settings.current().autoTrains).toBe(false)
+  })
+
+  // So the list is in order the moment the player asks for it, rather than after
+  // the next line is built.
+  it('sorts the line list as soon as sorting is switched on', () => {
+    const harness = createHarness()
+    openSettingsTab()
+    fireEvent.click(settingsToggle('Sort lines by name'))
+    fireEvent.click(settingsToggle('Sort lines by name'))
+
+    expect(harness.settings.current().sortLinesByName).toBe(true)
+    expect(harness.sortLines.execute).toHaveBeenCalled()
   })
 
   it('offers no reset while the settings are untouched', () => {
@@ -487,7 +506,7 @@ describe('AutoLinesPanel settings tab', () => {
   it('offers nothing to apply while auto trains are off', () => {
     createHarness()
     openSettingsTab()
-    fireEvent.click(screen.getByRole('switch'))
+    fireEvent.click(settingsToggle('Auto trains'))
     expect(actionButton().disabled).toBe(true)
   })
 

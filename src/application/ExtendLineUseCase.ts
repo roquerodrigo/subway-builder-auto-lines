@@ -1,4 +1,5 @@
 import type { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { ExpansionPlan, ForkChoices } from '@/domain/line/ExpansionPlan'
 import type { CrossoverInjector } from '@/infrastructure/crossover/CrossoverInjector'
 import type { RoutePreviewEditor } from '@/infrastructure/routing/RoutePreviewEditor'
@@ -20,6 +21,7 @@ export class ExtendLineUseCase {
     private readonly crossovers: CrossoverInjector,
     private readonly previewEditor: RoutePreviewEditor,
     private readonly provisionService: ProvisionServiceUseCase,
+    private readonly sortLines: SortLinesUseCase,
   ) {}
 
   async execute(routeId: string, plan: ExpansionPlan, choices: ForkChoices): Promise<ExtendOutcome> {
@@ -32,6 +34,7 @@ export class ExtendLineUseCase {
     const result = await this.previewEditor.applyAdditions(routeId, addStationNodeIds)
     if (result.committed) {
       this.provisionService.execute(routeId)
+      this.sortLines.execute()
     }
 
     return { committed: result.committed, hadAdditions: true }

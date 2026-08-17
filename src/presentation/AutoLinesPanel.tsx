@@ -209,9 +209,16 @@ export function createAutoLinesPanel(dependencies: PanelDependencies): () => JSX
     }
 
     // Settings are saved as they change (and sanitized on the way in), so the next
-    // line built or extended already runs on them.
-    const saveSettings = (next: ServiceSettings): void => setSettings(dependencies.settings.save(next))
-    const resetSettings = (): void => setSettings(dependencies.settings.reset())
+    // line built or extended already runs on them. Sorting takes effect the moment
+    // it is switched on, rather than waiting for the next line to be built.
+    const saveSettings = (next: ServiceSettings): void => {
+      setSettings(dependencies.settings.save(next))
+      dependencies.sortLines.execute()
+    }
+    const resetSettings = (): void => {
+      setSettings(dependencies.settings.reset())
+      dependencies.sortLines.execute()
+    }
 
     // What the selected line is set to run at — its own headways, or the city-wide
     // ones it still follows — with whatever the player has typed on top, until they

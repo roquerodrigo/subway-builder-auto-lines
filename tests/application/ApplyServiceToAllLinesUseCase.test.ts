@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { ProvisionServiceUseCase } from '@/application/ProvisionServiceUseCase'
+import type { SortLinesUseCase } from '@/application/SortLinesUseCase'
 import type { GameState } from '@/shared/game/GameState'
 
 import { ApplyServiceToAllLinesUseCase } from '@/application/ApplyServiceToAllLinesUseCase'
@@ -9,12 +10,15 @@ import { GameStore } from '@/infrastructure/store/GameStore'
 function createFixture(routes: GameState['routes']) {
   const state: GameState = { money: 0, ownedTrainCount: 0, routes, tracks: [] }
   const provision = { execute: vi.fn() }
+  const sortLines = { execute: vi.fn() }
 
   return {
     provision,
+    sortLines,
     useCase: new ApplyServiceToAllLinesUseCase(
       new GameStore({ getState: () => state }),
       provision as unknown as ProvisionServiceUseCase,
+      sortLines as unknown as SortLinesUseCase,
     ),
   }
 }
@@ -55,5 +59,12 @@ describe('ApplyServiceToAllLinesUseCase', () => {
 
     expect(useCase.execute()).toBe(0)
     expect(provision.execute).not.toHaveBeenCalled()
+  })
+
+  it('puts the line list back in order', () => {
+    const { sortLines, useCase } = createFixture([{ id: 'r1', stNodes: [] }])
+    useCase.execute()
+
+    expect(sortLines.execute).toHaveBeenCalled()
   })
 })
