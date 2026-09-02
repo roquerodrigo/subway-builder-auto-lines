@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.1](https://github.com/roquerodrigo/subway-builder-auto-lines/compare/v1.3.0...v1.3.1) (2026-09-02)
+
+
+### Documentation
+
+* add GitHub Sponsors button and support section ([3ee47ce](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/3ee47ce13a38b6e1201e63c30e83d42c7cc75b87))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump the npm_and_yarn group across 1 directory with 2 updates ([3645329](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/364532931c93143eff68dfc3e28225ab9bfe752b))
+* **deps-dev:** bump undici ([8ab818e](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/8ab818e794e95c8562d51794da6c1f5d838689fa))
+
 ## [1.3.0](https://github.com/roquerodrigo/subway-builder-auto-lines/compare/v1.2.0...v1.3.0) (2026-08-17)
 
 
