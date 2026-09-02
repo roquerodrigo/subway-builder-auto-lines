@@ -1,5 +1,7 @@
 # Auto Lines
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/roquerodrigo)
+
 A mod for [Subway Builder](https://www.subwaybuilder.com) that automates building
 transit lines: **extend an existing line along its corridor**, or **create a new line
 for stations that have none** — each with proper terminus crossovers and demand-based
@@ -156,6 +158,10 @@ node scripts/cdp-eval.mjs 'Object.keys(window.__subwayBuilder_storeCallbacks__.g
   against a new game version before trusting them.
 - New lines can only be made from stations with **no** line; branched groups need one
   line per corridor (run it again for the rest).
+
+## Support
+
+This mod is built and maintained on personal time. If it is useful to you, consider [sponsoring the work](https://github.com/sponsors/roquerodrigo) — it keeps the development, the testing and the releases coming.
 
 ## License
 
