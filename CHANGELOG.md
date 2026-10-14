@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.1](https://github.com/roquerodrigo/subway-builder-auto-lines/compare/v1.3.0...v1.3.1) (2026-10-14)
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** align @vitest/coverage-v8 with vitest 5 and patch undici and js-yaml ([59e969a](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/59e969af48ddb7d36b3c515c12072d06058c08b1))
+* **deps-dev:** bump the npm_and_yarn group across 1 directory with 2 updates ([3645329](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/364532931c93143eff68dfc3e28225ab9bfe752b))
+* **deps-dev:** bump undici ([8ab818e](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/8ab818e794e95c8562d51794da6c1f5d838689fa))
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([a6bffac](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/a6bffac07ec106fd8afe12bc40c8e2ea47e41cbd))
+* **release:** keep only user-facing changes in the changelog ([a402746](https://github.com/roquerodrigo/subway-builder-auto-lines/commit/a40274672f3307a00a8bb2eaf3d982652cbde8f0))
+
 ## [1.3.0](https://github.com/roquerodrigo/subway-builder-auto-lines/compare/v1.2.0...v1.3.0) (2026-08-17)
 
 
