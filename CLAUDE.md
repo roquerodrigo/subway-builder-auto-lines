@@ -23,11 +23,11 @@ compile-time only — it's gone from `dist/index.js`.
 
 **Commits follow [Conventional Commits](https://www.conventionalcommits.org)** —
 release-please parses the subject to decide the next version, so an unprefixed commit is
-invisible to it. Keep the prose style; just prefix the subject: `feat:` (minor), any other
-type — `fix:`, `chore:`, `docs:`, `refactor:`, `ci:`, … — (patch). Every type is
-releasable here on purpose — `release-please-config.json` lists them all under
-`changelog-sections` (none hidden), so a lone `chore:` such as a compatibility bump, or a
-lone `docs:`, still cuts a patch release instead of being dropped.
+invisible to it. Keep the prose style; just prefix the subject: `feat:` (minor), `fix:`,
+`perf:`, `revert:` or `chore:` (patch). Every other type (`refactor`, `deps`, `docs`,
+`ci`, `test`, …) is `hidden` in `release-please-config.json`'s `changelog-sections`, so it
+stays out of the changelog and a lone one opens no release PR. `chore:` stays visible on
+purpose, so a lone compatibility bump still cuts a patch release.
 
 `.github/workflows/release.yml` runs release-please on every push to main, where it grooms
 a release PR; merging that PR bumps the version, writes `CHANGELOG.md`, tags, and attaches
