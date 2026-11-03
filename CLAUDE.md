@@ -22,23 +22,22 @@ compile-time only — it's gone from `dist/index.js`.
 ## Commits & releases
 
 **Commits follow [Conventional Commits](https://www.conventionalcommits.org)** —
-release-please parses the subject to decide the next version, so an unprefixed commit is
-invisible to it. Keep the prose style; just prefix the subject: `feat:` (minor), any other
-type — `fix:`, `chore:`, `docs:`, `refactor:`, `ci:`, … — (patch). Every type is
-releasable here on purpose — `release-please-config.json` lists them all under
-`changelog-sections` (none hidden), so a lone `chore:` such as a compatibility bump, or a
-lone `docs:`, still cuts a patch release instead of being dropped.
+Release Autopilot parses the subject to decide the next version, so an unprefixed commit
+does not move it. Keep the prose style; just prefix the subject: `feat:` (minor), any
+other type — `fix:`, `chore:`, `docs:`, `refactor:`, `ci:`, … — (patch). Whether a
+release opens at all is decided by what the commits change for the people who play with
+the mod, not by their type: a lone `ci:` or `docs:` waits, unreleased, until something
+relevant lands.
 
-`.github/workflows/release.yml` runs release-please on every push to main, where it grooms
-a release PR; merging that PR bumps the version, writes `CHANGELOG.md`, tags, and attaches
-the Railyard assets. Versions stay in step across `package.json`, `src/manifest.json` (via
-`extra-files`) and `.release-please-manifest.json` — never bump them by hand.
+`.github/workflows/release.yml` runs Release Autopilot on every push to main, where it
+grooms a release PR; merging that PR bumps the version, writes `CHANGELOG.md` and tags,
+and the `publish` job then attaches the Railyard assets. Versions stay in step across
+`package.json` and `src/manifest.json` (listed under `version_files` in
+`.release-autopilot.yml`) — never bump them by hand.
 
-> `include-component-in-tag: false` is load-bearing: the default prefixes tags with the
-> package name, and the registry only accepts `X.Y.Z` or `vX.Y.Z`. The repo also needs
-> **"Allow GitHub Actions to create and approve pull requests"** switched on, or
-> release-please can't open its PR — that's separate from the workflow's own
-> `permissions:` block.
+> Tags are always `vX.Y.Z`, one of the two shapes the registry accepts (`X.Y.Z` or
+> `vX.Y.Z`). The release PR is opened with the `RELEASE_TOKEN` secret so that CI runs on
+> it; a release PR opened with the default `GITHUB_TOKEN` runs no checks.
 
 ## Publishing to Railyard
 
