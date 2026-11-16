@@ -96,8 +96,7 @@ export class LineExpansionPlanner {
             visited,
           )
           const options: ForkOption[] = branches.map((branchPath) =>
-            this.branchOption(network, index, lineStationNodeIds, forkStation, forkInward, branchPath),
-          )
+            this.branchOption(network, index, lineStationNodeIds, forkStation, forkInward, branchPath))
           if (options.length) {
             fork = { atName: index.name(forkStation), options }
           }

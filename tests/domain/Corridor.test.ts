@@ -63,8 +63,12 @@ describe('Corridor.longest', () => {
 
   it('takes only the loop the first station sits on when the group holds two', () => {
     const loops: [string, string][] = [
-      ['a', 'b'], ['b', 'c'], ['c', 'a'],
-      ['x', 'y'], ['y', 'z'], ['z', 'x'],
+      ['a', 'b'],
+      ['b', 'c'],
+      ['c', 'a'],
+      ['x', 'y'],
+      ['y', 'z'],
+      ['z', 'x'],
     ]
     const corridor = Corridor.longest(['a', 'b', 'c', 'x', 'y', 'z'], adjacencyOf(loops))
     expect(corridor.slice().sort()).toEqual(['a', 'b', 'c'])
