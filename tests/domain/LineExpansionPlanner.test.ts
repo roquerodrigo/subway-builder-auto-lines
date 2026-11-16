@@ -109,8 +109,11 @@ describe('LineExpansionPlanner.plan', () => {
     const plan = planOver(
       {
         links: [
-          { between: ['a', 'b'] }, { between: ['b', 'c'] },
-          { between: ['c', 'd'] }, { between: ['d', 'f'] }, { between: ['c', 'e'] },
+          { between: ['a', 'b'] },
+          { between: ['b', 'c'] },
+          { between: ['c', 'd'] },
+          { between: ['d', 'f'] },
+          { between: ['c', 'e'] },
         ],
         stations: [
           { at: point(0, 0), id: 'a', name: 'A' },

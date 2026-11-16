@@ -19,9 +19,13 @@ const STRAIGHT: NetworkSpec = {
 // destinations, so each end is a fork the user resolves.
 const FORKED_AT_BOTH_ENDS: NetworkSpec = {
   links: [
-    { between: ['b', 'x'] }, { between: ['x', 'y'] }, { between: ['y', 'c'] },
-    { between: ['b', 'f'] }, { between: ['b', 'g'] },
-    { between: ['c', 'd'] }, { between: ['c', 'e'] },
+    { between: ['b', 'x'] },
+    { between: ['x', 'y'] },
+    { between: ['y', 'c'] },
+    { between: ['b', 'f'] },
+    { between: ['b', 'g'] },
+    { between: ['c', 'd'] },
+    { between: ['c', 'e'] },
   ],
   stations: [
     { at: point(1, 0), id: 'b', name: 'B' },
@@ -40,9 +44,13 @@ const FORKED_AT_BOTH_ENDS: NetworkSpec = {
 // a real continuation.
 const FOLD_BACK_AT_START: NetworkSpec = {
   links: [
-    { between: ['b', 'x'] }, { between: ['x', 'y'] }, { between: ['y', 'c'] },
-    { between: ['b', 'f'] }, { between: ['b', 'h'] },
-    { between: ['c', 'd'] }, { between: ['c', 'e'] },
+    { between: ['b', 'x'] },
+    { between: ['x', 'y'] },
+    { between: ['y', 'c'] },
+    { between: ['b', 'f'] },
+    { between: ['b', 'h'] },
+    { between: ['c', 'd'] },
+    { between: ['c', 'e'] },
   ],
   stations: [
     { at: point(1, 0), id: 'b', name: 'B' },
@@ -62,8 +70,11 @@ const FOLD_BACK_IDS = ['b', 'x', 'y', 'c', 'f', 'h', 'd', 'e']
 // be followed past d to the real terminus d2.
 const DEEP_FORK: NetworkSpec = {
   links: [
-    { between: ['a', 'b'] }, { between: ['b', 'c'] },
-    { between: ['c', 'd'] }, { between: ['d', 'd2'] }, { between: ['c', 'e'] },
+    { between: ['a', 'b'] },
+    { between: ['b', 'c'] },
+    { between: ['c', 'd'] },
+    { between: ['d', 'd2'] },
+    { between: ['c', 'e'] },
   ],
   stations: [
     { at: point(0, 0), id: 'a', name: 'A' },

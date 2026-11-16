@@ -10,9 +10,17 @@ depends on (store, routes, trackGraph, crossovers, trains, demand, UI); that kno
 expensive to rediscover, and the store/route/train shapes are typed in `src/shared/game/`.
 `docs/inspecting-the-game.md` covers driving the live game over CDP.
 
-**TypeScript version**: pinned to **5.9** — not 7. TS 7 (the native Go port) ships no JS
-compiler API, so typescript-eslint (which needs it to parse `.ts`) can't run against it.
-5.9 type-checks the same source and keeps the linter working.
+**TypeScript version**: held on **6.0** — not 7. TS 7 (the native Go port) ships no JS
+compiler API, so typescript-eslint (which needs it to parse `.ts`) can't run against it;
+`.github/dependabot.yml` ignores `typescript >= 7` for that reason. 6.0 type-checks the
+same source and keeps the linter working.
+
+**ESLint version**: held on **9** — `eslint-plugin-react` and `eslint-plugin-jsx-a11y` do
+not support ESLint 10 yet, so Dependabot ignores `eslint`/`@eslint/js >= 10`.
+
+**React 19 dropped the global `JSX` namespace**, which the classic runtime with the `h`
+factory still resolves element types through; `src/infrastructure/ui/jsx.d.ts` maps it
+back to `React.JSX`.
 
 **Imports use the `@/*` alias for anything under `src/`** (`@/domain/line/Corridor`),
 never `../../`. Declared once in `tsconfig.json` (`paths`), which esbuild reads on its
